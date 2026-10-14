@@ -94,6 +94,8 @@ class Analysis:
         self.floor = floor
         self.bars = np.zeros(24)
         self.level = 0.0
+        self.rms = 0.0
+        self.peak_rms = max(floor*5, .008)
         self.display_bars = np.zeros(24)
         self.display_level = 0.0
         self.last_sound = -100.0
@@ -106,9 +108,15 @@ class Analysis:
         samples = samples.astype(float) / 32768
         samples -= samples.mean()
         rms = float(np.sqrt(np.mean(samples**2)))
+        self.rms = rms
         if rms > self.floor:
             self.last_sound = now
-        self.level = 0.65*self.level + 0.35*min(1, rms / max(self.floor*10, .05))
+        # Follow louder material, then release over several seconds. A fixed
+        # minimum reference prevents silence from acquiring unlimited gain.
+        self.peak_rms = max(rms, self.peak_rms * math.exp(-(len(samples)/RATE)/8))
+        reference = max(self.floor*5, .008, self.peak_rms)
+        target_level = math.sqrt(min(1, max(0, rms-self.floor*.5)/reference))
+        self.level = .45*self.level + .55*target_level
         spectrum = np.abs(np.fft.rfft(samples*self.window)) / (BLOCK/2)
         target = np.array([np.max(spectrum[b]) if b.any() else 0 for b in self.bins])
         target = np.clip((20*np.log10(target+1e-8)+65)/55, 0, 1)
@@ -202,7 +210,9 @@ def main():
             frames += 1
             end = time.monotonic()
             if args.stats and end-stats_start >= 10:
-                print('Frame rate: %.1f FPS' % (frames/(end-stats_start)), flush=True)
+                print('Frame rate: %.1f FPS; mic RMS %.5f; level %.3f; quiet %s' %
+                      (frames/(end-stats_start), state.rms, state.display_level,
+                       now-state.last_sound > 3), flush=True)
                 stats_start, frames = end, 0
             time.sleep(max(0, 1/args.fps-(time.monotonic()-now)))
     finally:

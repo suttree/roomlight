@@ -25,6 +25,12 @@ an ALSA capture device. The default uses the USB microphone's card name rather
 than its changeable card number. Unplugging the mic shows an error; restart
 after reconnecting it.
 
+The installed service uses a 0.002 quiet threshold for this USB microphone.
+Audio levels use a decaying peak reference and a square-root curve so normal
+room sound produces a visible response. `--stats` also logs RMS input, scaled
+level and quiet state, without recording audio. `reactive_rain.py` is the
+hand-tuned rain scene with stronger changes in length, width and brightness.
+
 Generate a synthetic-tone preview without Pi hardware:
 
 ```sh
@@ -58,6 +64,9 @@ the original bars and pulse. Drawing runs under the `visdisplay` system account
 with no network access and a read-only system filesystem. This combines syntax
 restrictions with OS process isolation; Python syntax checks alone are not a
 security boundary.
+The audio check compares silence with a moderate level of 0.2. At least 0.5%
+of screen pixels must change by 12 colour values or more, averaged over three
+frames, so a barely visible response cannot pass on pixel inequality alone.
 The interface accepts Pillow-style calls, plus separate endpoints for a line
 and a single centre point for a small dot, to tolerate common small-model output.
 
@@ -105,5 +114,5 @@ The downloaded Q4_K_M file has SHA256
 Runtime source: [llama.cpp b3889](https://github.com/ggml-org/llama.cpp/tree/b3889),
 built on the 32-bit Buster Pi with `make -j2 llama-cli`.
 
-Run `python3 -m unittest -v test_daily` for scheduler, validation and rollback
+Run `python3 -m unittest -v test_daily test_audio` for audio sensitivity, scheduler, validation and rollback
 checks. `example_scene.py` is a handwritten test fixture, not generated output.

@@ -6,8 +6,22 @@ import resource
 import sys
 import time
 from pathlib import Path
+from PIL import ImageChops
 
 from scenes import compile_scene, draw_scene
+
+
+def audio_response(function):
+    silent = {'level': 0., 'bands': (0.,)*24, 'quiet': False, 'pulse': .5}
+    moderate = {'level': .2, 'bands': (.2,)*24, 'quiet': False, 'pulse': .5}
+    fractions = []
+    for t in (.3, 1.7, 4.2):
+        before = draw_scene(function, t, silent)
+        after = draw_scene(function, t, moderate)
+        channels = ImageChops.difference(before, after).split()
+        difference = ImageChops.lighter(ImageChops.lighter(channels[0], channels[1]), channels[2])
+        fractions.append(sum(difference.histogram()[12:]) / (360*360))
+    return sum(fractions)/len(fractions)
 
 
 def validate(path):
@@ -31,13 +45,11 @@ def validate(path):
         raise ValueError('Scene drawing too slow: %.1f ms' % (mean*1000))
     if len(pictures) < 3:
         raise ValueError('Scene does not animate')
-    silent = {'level': 0., 'bands': (0.,)*24, 'quiet': False, 'pulse': .5}
-    loud = {'level': 1., 'bands': (1.,)*24, 'quiet': False, 'pulse': .5}
-    if all(draw_scene(function, t, silent).tobytes() == draw_scene(function, t, loud).tobytes()
-           for t in (0.3, 1.7, 4.2)):
-        raise ValueError('Scene does not react to audio')
+    response = audio_response(function)
+    if response < .005:
+        raise ValueError('Audio response too subtle at level 0.2. Make size and brightness change much more.')
     return {'frames': len(elapsed), 'mean_ms': round(mean*1000, 2),
-            'distinct_frames': len(pictures)}
+            'distinct_frames': len(pictures), 'audio_changed_percent': round(response*100, 2)}
 
 
 if __name__ == '__main__':

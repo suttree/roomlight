@@ -26,6 +26,8 @@ are numbers between 0 and 1. audio['quiet'] is a bool. Use pulse when quiet.
 Only use math.sin, math.cos, math.pi, range, int, min, max and draw.line or draw.ellipse.
 No imports or other functions. RGB colours must be integer tuples from 0 to 255.
 Use at most 24 shapes. Keep all coordinates within the screen.
+Audio must visibly change size and brightness, even at level 0.2. Use large
+changes such as size=8+100*strength and colour components=50+200*strength.
 Here is a working example. Write a DIFFERENT composition for the requested theme:
 def draw_frame(draw, t, audio, width, height):
     strength = audio['pulse'] if audio['quiet'] else audio['level']
