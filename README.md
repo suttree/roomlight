@@ -1,4 +1,4 @@
-# Room visualiser prototype
+# Room visualiser
 
 A microphone-driven display for the Pi 3 and legacy HyperPixel square screen.
 Frequency bars and a circle react to sound. After three seconds below the
@@ -36,4 +36,74 @@ The renderer targets 30 FPS and smooths motion between audio updates. Use
 seconds. Common framebuffer formats use Pillow's native encoder; other pixel
 layouts retain a generic conversion path.
 
-This is a manual test application. It doesn't change boot settings or autostart.
+## Daily local generation
+
+The installed version uses Qwen2.5-Coder-0.5B-Instruct, quantised to Q4_K_M,
+through llama.cpp b3889. Inference runs entirely on the Pi. It receives a drawing
+prompt, date and theme, without microphone recordings or transcripts.
+The 0.5B model uses explicit geometry briefs across twelve scene families, with
+daily changes to colour, shape count and speed. It writes the drawing function
+from that brief; it is not an unrestricted art generator. Freeform prompting
+proved unreliable in the initial Pi test.
+
+At 00:00 London time the service stops microphone capture and turns off the
+HyperPixel backlight. At 00:10 the model gets up to two attempts to write a short
+Python drawing function. At 06:00 the screen and microphone resume. The Pi stays
+powered overnight. Timers follow Europe/London, including daylight saving.
+
+Generated code uses a restricted drawing interface. A separate process tests
+animation, audio response and rendering speed before replacing the current
+scene. Validation failures keep the previous scene. Runtime errors fall back to
+the original bars and pulse. Drawing runs under the `visdisplay` system account
+with no network access and a read-only system filesystem. This combines syntax
+restrictions with OS process isolation; Python syntax checks alone are not a
+security boundary.
+The interface accepts Pillow-style calls, plus separate endpoints for a line
+and a single centre point for a small dot, to tolerate common small-model output.
+
+The model is small, so some nights may produce rejected code. Each date gets one
+generation job, with two attempts. Accepted scripts are saved in
+`/var/lib/room-visualiser/history/`, with the active script at `current.py` and
+the last replaced script at `previous.py`. `generation.json` records results.
+Each model attempt has a 45-minute limit and is stopped by 06:00 for scheduled
+runs. `last-model-output.txt` and `last-model-stderr.txt` show live progress.
+
+Install the Python files and units with `sudo sh install.sh` on the Pi, then put
+the executable and model at `/opt/room-visualiser-model/llama-cli` and
+`/opt/room-visualiser-model/qwen-coder.gguf` respectively. Enable after testing:
+
+```sh
+sudo systemctl enable --now room-visualiser-schedule.timer room-visualiser-generate.timer
+sudo systemctl start room-visualiser-schedule.service
+```
+
+The display service itself is controlled by the schedule. Check status with:
+
+```sh
+systemctl list-timers 'room-visualiser*'
+journalctl -u room-visualiser.service -n 20
+cat /var/lib/room-visualiser/generation.json
+```
+
+To test generation during the day, stop the schedule timer and display first
+so the model has the Pi's memory and CPU, then restore the schedule:
+
+```sh
+sudo systemctl stop room-visualiser-schedule.timer
+sudo python3 /opt/room-visualiser/schedule.py --test off
+sudo python3 /opt/room-visualiser/generate_daily.py --force
+sudo systemctl start room-visualiser-schedule.timer room-visualiser-schedule.service
+```
+
+To disable automatic operation, stop and disable both timers and stop
+`room-visualiser.service`. Manual backlight tests use
+`sudo python3 /opt/room-visualiser/schedule.py --test off` or `--test on`.
+
+Model source: [official Qwen GGUF repository](https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF).
+The downloaded Q4_K_M file has SHA256
+`1d9614638d18024d0fbb36575a15f1302a3adf044df10345688ec4f6e1c4ff32`.
+Runtime source: [llama.cpp b3889](https://github.com/ggml-org/llama.cpp/tree/b3889),
+built on the 32-bit Buster Pi with `make -j2 llama-cli`.
+
+Run `python3 -m unittest -v test_daily` for scheduler, validation and rollback
+checks. `example_scene.py` is a handwritten test fixture, not generated output.

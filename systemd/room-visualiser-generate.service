@@ -1,0 +1,12 @@
+[Unit]
+Description=Generate and validate a daily scene using the local coding model
+After=time-sync.target
+ConditionPathExists=/opt/room-visualiser-model/qwen-coder.gguf
+ConditionPathExists=/opt/room-visualiser-model/llama-cli
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/room-visualiser/generate_daily.py
+TimeoutStartSec=95min
+Nice=10
+Environment=TZ=Europe/London

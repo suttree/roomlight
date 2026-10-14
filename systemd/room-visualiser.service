@@ -1,0 +1,20 @@
+[Unit]
+Description=Room microphone visualiser
+After=sound.target
+
+[Service]
+User=visdisplay
+SupplementaryGroups=audio video
+WorkingDirectory=/opt/room-visualiser
+ExecStart=/usr/bin/python3 /opt/room-visualiser/visualiser.py --scene /var/lib/room-visualiser/current.py --noise-floor 0.02 --stats
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+MemoryMax=256M
+LimitAS=256M
+Environment=OPENBLAS_NUM_THREADS=1

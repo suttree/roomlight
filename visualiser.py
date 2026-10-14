@@ -154,10 +154,15 @@ def main():
     parser.add_argument('--preview', type=Path)
     parser.add_argument('--fps', type=int, default=30)
     parser.add_argument('--stats', action='store_true', help='Log achieved frame rate every ten seconds')
+    parser.add_argument('--scene', type=Path, help='Validated daily drawing script')
     args = parser.parse_args()
     if not 1 <= args.fps <= 60:
         parser.error('--fps must be between 1 and 60')
     state = Analysis(args.noise_floor)
+    daily = None
+    if args.scene:
+        from scenes import DailyScene
+        daily = DailyScene(args.scene)
     if args.preview:
         t = np.arange(BLOCK)/RATE
         state.update((10000*np.sin(2*np.pi*440*t)).astype(np.int16), 1)
@@ -190,7 +195,10 @@ def main():
                 state.update(samples, now)
             state.animate(now-previous)
             previous = now
-            fb.show(render(state, now, args.bpm, process.poll() is not None))
+            image = daily.render(state, now, args.bpm) if daily else None
+            if image is None:
+                image = render(state, now, args.bpm, process.poll() is not None)
+            fb.show(image)
             frames += 1
             end = time.monotonic()
             if args.stats and end-stats_start >= 10:

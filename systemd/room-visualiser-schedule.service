@@ -1,0 +1,8 @@
+[Unit]
+Description=Apply visualiser day and night schedule
+After=time-sync.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/room-visualiser/schedule.py
+

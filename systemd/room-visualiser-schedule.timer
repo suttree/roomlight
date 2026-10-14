@@ -1,0 +1,11 @@
+[Unit]
+Description=Keep visualiser off midnight to 06:00 London time
+
+[Timer]
+OnBootSec=30
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+Unit=room-visualiser-schedule.service
+
+[Install]
+WantedBy=timers.target

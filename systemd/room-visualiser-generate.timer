@@ -1,0 +1,10 @@
+[Unit]
+Description=Generate the day's visualisation locally at 00:10
+
+[Timer]
+OnCalendar=*-*-* 00:10:00 Europe/London
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
