@@ -31,4 +31,9 @@ Generate a synthetic-tone preview without Pi hardware:
 python3 visualiser.py --preview preview.png
 ```
 
+The renderer targets 30 FPS and smooths motion between audio updates. Use
+`--fps 20` to lower the target or `--stats` to log the achieved rate every ten
+seconds. Common framebuffer formats use Pillow's native encoder; other pixel
+layouts retain a generic conversion path.
+
 This is a manual test application. It doesn't change boot settings or autostart.
