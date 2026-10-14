@@ -111,7 +111,11 @@ def render(state, now, bpm, error=False):
     for i, value in enumerate(state.bars):
         height = 3 + int(value*72) if not quiet else 3+int(6*pulse)
         x = 24+i*13
-        draw.rounded_rectangle((x, 294-height, x+8, 294), radius=3, fill=colour)
+        box = (x, 294-height, x+8, 294)
+        if hasattr(draw, 'rounded_rectangle'):
+            draw.rounded_rectangle(box, radius=3, fill=colour)
+        else:  # Pillow shipped with Raspberry Pi OS Buster
+            draw.rectangle(box, fill=colour)
     label = 'MIC DISCONNECTED' if error else ('QUIET / %d BPM' % bpm if quiet else 'LISTENING')
     draw.text((24, 323), label, fill=(130, 148, 173))
     return image
