@@ -23,6 +23,7 @@ INSTRUCTIONS = '''Write a tiny animated Python drawing function. Output code onl
 Use the exact function signature shown below. Keep the whole function under 12 lines.
 The canvas is 360 by 360. t is time in seconds. audio['level'] and audio['pulse']
 are numbers between 0 and 1. audio['quiet'] is a bool. Use pulse when quiet.
+audio['bands'] contains 24 frequency levels from bass to treble, each from 0 to 1.
 Only use math.sin, math.cos, math.pi, range, int, min, max and draw.line or draw.ellipse.
 No imports or other functions. RGB colours must be integer tuples from 0 to 255.
 Use at most 12 shapes. Keep all coordinates within the screen.
@@ -41,7 +42,9 @@ def draw_frame(draw, t, audio, width, height):
 THEMES = ['orbiting moons', 'sound ripples', 'a geometric flower',
           'a constellation', 'waves', 'a spiral of dots',
           'rotating spokes', 'falling rain', 'woven lines',
-          'a slowly breathing sun', 'dancing columns', 'radial sparks']
+          'a slowly breathing sun', 'dancing columns', 'radial sparks',
+          'classic spectrum bars', 'a mirrored equaliser',
+          'a radial spectrum', 'an oscilloscope-style wave']
 
 
 def design_brief(day):
@@ -76,7 +79,26 @@ def design_brief(day):
         'h=10+140*strength*(.5+.5*math.sin(t+i)). Draw from (x,300) to (x,300-h), width=6.',
         'Draw radial sparks as short lines. angle=i*2*math.pi/N; radius=20+(t*SPEED+i*9)%70. '
         'Draw from (180+radius*math.cos(angle),180+radius*math.sin(angle)) '
-        'to (180+(radius+5+70*strength)*math.cos(angle),180+(radius+5+70*strength)*math.sin(angle)), width=6.'
+        'to (180+(radius+5+70*strength)*math.cos(angle),180+(radius+5+70*strength)*math.sin(angle)), width=6.',
+        'Draw classic spectrum bars as thick vertical lines. '
+        "energy=strength if audio['quiet'] else min(1,0.4*strength+0.6*audio['bands'][int(i*24/N)]). "
+        'x=25+i*310/N; h=12+220*energy+4*math.sin(t*2+i). '
+        'Draw from (x,320) to (x,320-h), width=12.',
+        'Draw a classic mirrored equaliser across the horizontal centre. '
+        "energy=strength if audio['quiet'] else min(1,0.4*strength+0.6*audio['bands'][int(i*24/N)]). "
+        'x=25+i*310/N; h=8+140*energy+3*math.sin(t*2+i). '
+        'Draw one vertical line from (x,180-h) to (x,180+h), width=10.',
+        'Draw a classic radial spectrum of thick spokes around an empty centre. '
+        "energy=strength if audio['quiet'] else min(1,0.4*strength+0.6*audio['bands'][int(i*24/N)]). "
+        'angle=i*2*math.pi/N+t*0.15; r=65+95*energy. '
+        'Draw from (180+45*math.cos(angle),180+45*math.sin(angle)) '
+        'to (180+r*math.cos(angle),180+r*math.sin(angle)), width=10.',
+        'Draw a connected oscilloscope-style sine wave using N line segments. '
+        'This is an audio-level animation, not raw microphone samples. '
+        'amplitude=12+135*strength; x=20+i*320/N; next_x=20+(i+1)*320/N. '
+        'y=180+amplitude*math.sin(i*4*math.pi/N+t*2); '
+        'next_y=180+amplitude*math.sin((i+1)*4*math.pi/N+t*2). '
+        'Draw from (x,y) to (next_x,next_y), width=6.'
     ]
     return (forms[seed % len(forms)]
             .replace('N', str(count)).replace('SPEED', str(speed)).replace('COLOUR', str(colour))

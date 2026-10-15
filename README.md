@@ -47,10 +47,16 @@ layouts retain a generic conversion path.
 The installed version uses Qwen2.5-Coder-0.5B-Instruct, quantised to Q4_K_M,
 through llama.cpp b3889. Inference runs entirely on the Pi. It receives a drawing
 prompt, date and theme, without microphone recordings or transcripts.
-The 0.5B model uses explicit geometry briefs across twelve scene families, with
+The 0.5B model uses explicit geometry briefs across sixteen scene families, with
 daily changes to colour, shape count and speed. It writes the drawing function
 from that brief; it is not an unrestricted art generator. Freeform prompting
 proved unreliable in the initial Pi test.
+
+The rotation includes classic spectrum bars, a mirrored equaliser, a radial
+spectrum and an oscilloscope-style wave. The spectrum styles use 24 microphone
+frequency bands, grouped into 8 to 12 shapes. The wave is a sine animation driven
+by audio level, not a trace of raw microphone samples. All four use the silent
+pulse when the room is quiet and must pass the usual validation before activation.
 
 At 00:00 London time the service stops microphone capture and turns off the
 HyperPixel backlight. At 00:10 the model gets up to two attempts to write a short
