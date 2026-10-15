@@ -7,9 +7,14 @@ import numpy as np
 from scenes import compile_scene
 from validate_scene import audio_response
 from visualiser import Analysis, BLOCK, RATE
+from generate_daily import INSTRUCTIONS, extract_code
 
 
 class AudioTests(unittest.TestCase):
+    def test_model_example_has_a_visible_audio_response(self):
+        function = compile_scene(extract_code(INSTRUCTIONS))
+        self.assertGreater(audio_response(function), .005)
+
     def test_room_level_audio_leaves_idle_and_has_visible_level(self):
         state = Analysis(.002)
         wave = np.sin(2*math.pi*440*np.arange(BLOCK)/RATE)

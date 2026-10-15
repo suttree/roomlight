@@ -69,6 +69,9 @@ of screen pixels must change by 12 colour values or more, averaged over three
 frames, so a barely visible response cannot pass on pixel inequality alone.
 The interface accepts Pillow-style calls, plus separate endpoints for a line
 and a single centre point for a small dot, to tolerate common small-model output.
+The loader also accepts a single named drawing function using the expected
+arguments, with an optional omitted `height` argument. It normalises only the
+function header, then runs the same syntax, audio and rendering checks.
 
 The model is small, so some nights may produce rejected code. Each date gets one
 generation job, with two attempts. Accepted scripts are saved in
@@ -93,6 +96,11 @@ systemctl list-timers 'room-visualiser*'
 journalctl -u room-visualiser.service -n 20
 cat /var/lib/room-visualiser/generation.json
 ```
+
+After fixing a compatibility problem, revalidate today's failed model output
+without another inference run with
+`sudo python3 /opt/room-visualiser/generate_daily.py --retry-saved`.
+It only accepts output from today's failed job and still requires validation.
 
 To test generation during the day, stop the schedule timer and display first
 so the model has the Pi's memory and CPU, then restore the schedule:

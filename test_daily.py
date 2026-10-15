@@ -17,6 +17,34 @@ GOOD = '''def draw_frame(draw, t, audio, width, height):
 
 
 class SceneTests(unittest.TestCase):
+    def test_named_function_with_omitted_height_is_normalised(self):
+        output = '```python\nimport math\n'+GOOD.replace(
+            'draw_frame(draw, t, audio, width, height)',
+            'draw_woven_lines(draw, t, audio, width)')+'```\nExplanation.'
+        self.assertEqual(generate_daily.extract_code(output), GOOD)
+
+    def test_normalisation_does_not_bypass_restrictions(self):
+        invalid = [GOOD.replace('t, audio', 'audio, t'), GOOD+'\n'+GOOD,
+                   'def named(draw, t, audio, width):\n    open("/etc/passwd")\n',
+                   'def named(draw, t, audio, width=3):\n    pass\n']
+        for code in invalid:
+            with self.subTest(code=code), self.assertRaises(ValueError):
+                generate_daily.extract_code(code)
+
+    def test_saved_output_recovery_uses_validator_without_inference(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(generate_daily, 'DATA', Path(folder)):
+            data = Path(folder)
+            (data/'generation.json').write_text(json.dumps({
+                'date': datetime.date.today().isoformat(), 'success': False, 'attempts': 2}))
+            (data/'last-model-output.txt').write_text(GOOD.replace('draw_frame', 'draw_waves'))
+            with patch('generate_daily.run_model') as model, \
+                    patch('generate_daily.subprocess.run', return_value=subprocess.CompletedProcess([], 0, '{}', '')) as validator:
+                generate_daily.run(retry_saved=True)
+            model.assert_not_called()
+            validator.assert_called_once()
+            self.assertEqual((data/'current.py').read_text(), GOOD)
+            self.assertTrue(json.loads((data/'generation.json').read_text())['success'])
+
     def test_rejects_access_outside_drawing_interface(self):
         bad = [
             'import os\n'+GOOD,

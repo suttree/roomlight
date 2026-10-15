@@ -25,7 +25,7 @@ The canvas is 360 by 360. t is time in seconds. audio['level'] and audio['pulse'
 are numbers between 0 and 1. audio['quiet'] is a bool. Use pulse when quiet.
 Only use math.sin, math.cos, math.pi, range, int, min, max and draw.line or draw.ellipse.
 No imports or other functions. RGB colours must be integer tuples from 0 to 255.
-Use at most 24 shapes. Keep all coordinates within the screen.
+Use at most 12 shapes. Keep all coordinates within the screen.
 Audio must visibly change size and brightness, even at level 0.2. Use large
 changes such as size=8+100*strength and colour components=50+200*strength.
 Here is a working example. Write a DIFFERENT composition for the requested theme:
@@ -35,7 +35,7 @@ def draw_frame(draw, t, audio, width, height):
         angle = i * math.pi / 6 + t * 0.4
         x = 180 + 90 * math.cos(angle)
         y = 180 + 90 * math.sin(angle)
-        r = 3 + 12 * strength
+        r = 6 + 25 * strength
         draw.ellipse((x-r, y-r, x+r, y+r), fill=(60, 210, 180))
 '''
 THEMES = ['orbiting moons', 'sound ripples', 'a geometric flower',
@@ -47,36 +47,36 @@ THEMES = ['orbiting moons', 'sound ripples', 'a geometric flower',
 def design_brief(day):
     """Give the tiny model concrete geometry, varying it deterministically each day."""
     seed = day.toordinal()
-    count = 10 + seed % 13
+    count = 8 + seed % 5
     speed = 20 + seed % 41
     colour = tuple(int(c*255) for c in colorsys.hsv_to_rgb((seed*.61803398875) % 1, .65, 1))
     forms = [
         'Draw orbiting dots. angle=i*2*math.pi/N+t*0.3; radius=55+i*4+20*strength. '
-        'Place dots at (180+radius*math.cos(angle),180+radius*math.sin(angle)), size 3+6*strength.',
+        'Place dots at (180+radius*math.cos(angle),180+radius*math.sin(angle)), size 6+25*strength.',
         'Draw expanding circle outlines centred at (180,180). '
-        'radius=10+(i*13+t*SPEED)%150. Use outline=COLOUR and width=2, no fill.',
+        'radius=10+(i*13+t*SPEED)%110+30*strength. Use outline=COLOUR and width=2, no fill.',
         'Draw a radial flower of lines from (180,180). angle=i*2*math.pi/N+t*0.15. '
         'radius=60+60*strength+25*math.sin(t+i). End at (180+radius*math.cos(angle),180+radius*math.sin(angle)).',
-        'Draw dots at x=20+(i*43)%320, y=180+100*math.sin(t*0.5+i*0.7). Size 2+10*strength.',
+        'Draw dots at x=20+(i*43)%320, y=180+100*math.sin(t*0.5+i*0.7). Size 6+25*strength.',
         'Draw short horizontal wave lines. x=10+i*320/N; y=180+70*math.sin(t+i*0.5). '
-        'Draw from (x,y) to (x+8,y+25*strength), width=3.',
+        'Draw from (x,y) to (x+8,y+100*strength), width=4.',
         'Draw spiral dots. angle=i*0.65+t*0.3; radius=10+i*5. '
-        'Place dots at (180+radius*math.cos(angle),180+radius*math.sin(angle)), size 2+8*strength.',
+        'Place dots at (180+radius*math.cos(angle),180+radius*math.sin(angle)), size 6+25*strength.',
         'Draw rotating spokes. angle=i*2*math.pi/N-t*0.4. '
         'Draw from (180+40*math.cos(angle),180+40*math.sin(angle)) '
-        'to (180+(90+50*strength)*math.cos(angle),180+(90+50*strength)*math.sin(angle)), width=2.',
+        'to (180+(55+100*strength)*math.cos(angle),180+(55+100*strength)*math.sin(angle)), width=4.',
         'Replace the example with falling rain. Use vertical lines, not circles. '
-        'For each i, x=10+i*320/N; y=(t*SPEED+i*31)%300. '
-        'Draw from (x,y) to (x,y+5+30*strength), width=2. Remove angle, sin and cos.',
+        'For each i, x=10+i*320/N; y=(t*SPEED+i*31)%220. '
+        'Draw from (x,y) to (x,y+8+115*strength), width=3. Remove angle, sin and cos.',
         'Draw woven lines. y=15+i*320/N. '
         'Draw from (20,y) to (340,180+120*math.sin(t*0.4+i*0.25)*(.3+strength*.7)), width=2.',
         'Draw concentric breathing circle outlines at (180,180). '
         'radius=10+i*5+15*strength+5*math.sin(t). Use outline=COLOUR, width=2, no fill.',
         'Draw vertical sound columns as thick lines. x=15+i*320/N; '
         'h=10+140*strength*(.5+.5*math.sin(t+i)). Draw from (x,300) to (x,300-h), width=6.',
-        'Draw radial sparks as short lines. angle=i*2*math.pi/N; radius=30+(t*SPEED+i*9)%100. '
+        'Draw radial sparks as short lines. angle=i*2*math.pi/N; radius=20+(t*SPEED+i*9)%70. '
         'Draw from (180+radius*math.cos(angle),180+radius*math.sin(angle)) '
-        'to (180+(radius+5+20*strength)*math.cos(angle),180+(radius+5+20*strength)*math.sin(angle)), width=2.'
+        'to (180+(radius+5+70*strength)*math.cos(angle),180+(radius+5+70*strength)*math.sin(angle)), width=6.'
     ]
     return (forms[seed % len(forms)]
             .replace('N', str(count)).replace('SPEED', str(speed)).replace('COLOUR', str(colour))
@@ -88,11 +88,22 @@ def extract_code(text):
     if '```' in text:
         pieces = re.findall(r'```(?:python)?\s*\n(.*?)```', text, re.S)
         text = pieces[0] if pieces else text.replace('```python', '').replace('```', '')
-    start = text.find('def draw_frame(')
-    if start < 0:
+    definitions = list(re.finditer(r'^def\s+\w+\s*\(', text, re.M))
+    if not definitions:
         raise ValueError('No drawing function returned')
-    lines = text[start:].splitlines()
-    clean = [lines[0]]
+    if len(definitions) != 1:
+        raise ValueError('Supply exactly one drawing function')
+    lines = text[definitions[0].start():].splitlines()
+    header = re.fullmatch(r'def\s+\w+\s*\(([^)]*)\)\s*:\s*', lines[0])
+    if header is None:
+        raise ValueError('Incomplete or unsupported drawing function signature')
+    arguments = [arg.strip() for arg in header.group(1).split(',')]
+    if arguments not in [['draw', 't', 'audio', 'width'],
+                         ['draw', 't', 'audio', 'width', 'height']]:
+        raise ValueError('Drawing arguments must be draw, t, audio, width, height')
+    # Normalise the entry point without changing the model's drawing body.
+    # The full syntax and isolated rendering checks still run below.
+    clean = ['def draw_frame(draw, t, audio, width, height):']
     for line in lines[1:]:
         if line.strip() and not line.startswith((' ', '\t')):
             break
@@ -149,7 +160,7 @@ def activate_scene(code, date, theme, status):
     print('New local-model scene accepted: '+theme, flush=True)
 
 
-def run(force=False):
+def run(force=False, retry_saved=False):
     os.environ['TZ'] = 'Europe/London'
     time.tzset()
     DATA.mkdir(parents=True, exist_ok=True)
@@ -162,6 +173,22 @@ def run(force=False):
         date = datetime.date.today().isoformat()
         status_path = DATA/'generation.json'
         status = json.loads(status_path.read_text()) if status_path.exists() else {}
+        if retry_saved:
+            if status.get('date') != date:
+                raise ValueError('Saved output must belong to today')
+            if status.get('success'):
+                print('Today already has an accepted scene')
+                return
+            code = extract_code((DATA/'last-model-output.txt').read_text())
+            status['recovered_from_saved_output'] = True
+            theme = THEMES[datetime.date.today().toordinal() % len(THEMES)]
+            try:
+                activate_scene(code, date, theme, status)
+            except (ValueError, SyntaxError, RuntimeError, subprocess.TimeoutExpired) as exc:
+                status['error'] = str(exc)[:1000]
+                status_path.write_text(json.dumps(status, indent=2))
+                raise
+            return
         if not force and status.get('date') == date:
             print('Already attempted today; keeping current scene')
             return
@@ -208,4 +235,7 @@ def run(force=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--force', action='store_true')
-    run(parser.parse_args().force)
+    parser.add_argument('--retry-saved', action='store_true',
+                        help='Revalidate today\'s failed output without running the model again')
+    args = parser.parse_args()
+    run(force=args.force, retry_saved=args.retry_saved)
