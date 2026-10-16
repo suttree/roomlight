@@ -68,7 +68,10 @@ powered overnight. Timers follow Europe/London, including daylight saving.
 
 Generated code uses a restricted drawing interface. A separate process tests
 animation, audio response and rendering speed before replacing the current
-scene. Validation failures keep the previous scene. Runtime errors fall back to
+scene. After both model attempts fail, a handwritten classic theme goes through the same
+validation and replaces the previous scene. The four classic styles rotate by
+date, vary their colour and avoid the previous accepted theme. If a classic fails
+validation, the next is tried. Only failure of every candidate keeps the old scene. Runtime errors fall back to
 the original bars and pulse. Drawing runs under the `visdisplay` system account
 with no network access and a read-only system filesystem. This combines syntax
 restrictions with OS process isolation; Python syntax checks alone are not a
@@ -83,9 +86,11 @@ The loader also accepts a single named drawing function using the expected
 arguments, with an optional omitted `height` argument. It normalises only the
 function header, then runs the same syntax, audio and rendering checks.
 
-The model is small, so some nights may produce rejected code. Each date gets one
+The model is small, so some nights may produce rejected code. A successful
+fallback records `source: classic_fallback`, `model_success: false`, and the last
+model error in `generation.json`; it is not reported as an LLM success. Each date gets one
 generation job, with two attempts. Accepted scripts are saved in
-`/var/lib/room-visualiser/history/`, with the active script at `current.py` and
+`/var/lib/room-visualiser/history/`, including accepted classics, with the active script at `current.py` and
 the last replaced script at `previous.py`. `generation.json` records results.
 Each model attempt has a 45-minute limit and is stopped by 06:00 for scheduled
 runs. `last-model-output.txt` and `last-model-stderr.txt` show live progress.

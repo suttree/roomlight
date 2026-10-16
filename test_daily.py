@@ -109,7 +109,9 @@ class SceneTests(unittest.TestCase):
             data = Path(folder)
             (data/'current.py').write_text(GOOD)
             answer = subprocess.CompletedProcess([], 0, 'not python', '')
-            with patch('generate_daily.run_model', return_value=answer), self.assertRaises(SystemExit):
+            with patch('generate_daily.run_model', return_value=answer), \
+                    patch('generate_daily.subprocess.run', return_value=subprocess.CompletedProcess([], 1, '', 'Rejected')), \
+                    self.assertRaises(SystemExit):
                 generate_daily.run(force=True)
             self.assertEqual((data/'current.py').read_text(), GOOD)
             self.assertFalse(json.loads((data/'generation.json').read_text())['success'])
@@ -129,9 +131,45 @@ class SceneTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, patch.object(generate_daily, 'DATA', Path(folder)):
             (Path(folder)/'current.py').write_text(GOOD)
             answer = subprocess.CompletedProcess([], 0, GOOD, '')
-            with patch('generate_daily.run_model', return_value=answer), self.assertRaises(SystemExit):
+            with patch('generate_daily.run_model', return_value=answer), \
+                    patch('generate_daily.subprocess.run', return_value=subprocess.CompletedProcess([], 1, '', 'Rejected')), \
+                    self.assertRaises(SystemExit):
                 generate_daily.run(force=True)
             self.assertEqual((Path(folder)/'current.py').read_text(), GOOD)
+
+    def test_failed_model_activates_classic_and_does_not_repeat_today(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(generate_daily, 'DATA', Path(folder)):
+            data = Path(folder)
+            today = datetime.date.today()
+            old_theme, old_code = generate_daily.classic_scene(today)
+            (data/'current.py').write_text(old_code)
+            (data/'generation.json').write_text(json.dumps({'success': True, 'theme': old_theme}))
+            failed = subprocess.CompletedProcess([], 0, 'invalid code', '')
+            valid = subprocess.CompletedProcess([], 0, '{}', '')
+            with patch('generate_daily.run_model', return_value=failed) as model, \
+                    patch('generate_daily.subprocess.run', return_value=valid) as validator:
+                generate_daily.run(force=True)
+                generate_daily.run()
+            status = json.loads((data/'generation.json').read_text())
+            self.assertTrue(status['success'])
+            self.assertFalse(status['model_success'])
+            self.assertEqual(status['source'], 'classic_fallback')
+            self.assertIn('No drawing function', status['model_error'])
+            self.assertNotEqual(status['theme'], old_theme)
+            self.assertEqual((data/'previous.py').read_text(), old_code)
+            self.assertEqual(model.call_count, 2)
+            validator.assert_called_once()
+
+    def test_failed_day_can_recover_without_more_inference(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(generate_daily, 'DATA', Path(folder)):
+            data = Path(folder)
+            (data/'generation.json').write_text(json.dumps({
+                'date': datetime.date.today().isoformat(), 'success': False, 'error': 'model failed'}))
+            with patch('generate_daily.run_model') as model, \
+                    patch('generate_daily.subprocess.run', return_value=subprocess.CompletedProcess([], 0, '{}', '')):
+                generate_daily.run()
+            model.assert_not_called()
+            self.assertEqual(json.loads((data/'generation.json').read_text())['source'], 'classic_fallback')
 
 
 if __name__ == '__main__':

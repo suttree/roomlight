@@ -1,4 +1,5 @@
 import math
+import datetime
 import unittest
 from pathlib import Path
 
@@ -7,9 +8,16 @@ import numpy as np
 from scenes import compile_scene
 from validate_scene import audio_response
 from visualiser import Analysis, BLOCK, RATE
+from classic_scenes import classic_scene
 
 
 class AudioTests(unittest.TestCase):
+    def test_classic_fallbacks_respond_to_audio(self):
+        for offset in range(4):
+            name, code = classic_scene(datetime.date(2026, 10, 16), offset)
+            with self.subTest(theme=name):
+                self.assertGreater(audio_response(compile_scene(code)), .005)
+
     def test_recovered_dots_have_a_visible_audio_response(self):
         function = compile_scene(Path('examples/2026-10-15-purple-dots.py').read_text())
         self.assertGreater(audio_response(function), .005)

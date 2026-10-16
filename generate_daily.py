@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 
 from scenes import check_source
+from classic_scenes import classic_scene, NAMES as CLASSIC_NAMES
 
 BASE = Path('/opt/room-visualiser')
 DATA = Path('/var/lib/room-visualiser')
@@ -181,6 +182,27 @@ def activate_scene(code, date, theme, status):
     print('Scene accepted: '+theme+' ('+status.get('source', 'local_model')+')', flush=True)
 
 
+def activate_fallback(date, status):
+    """Try validated classics, avoiding the previous accepted theme."""
+    status['model_error'] = status.get('error', 'Model generation failed')
+    status['source'] = 'classic_fallback'
+    status['model_success'] = False
+    failures = []
+    day = datetime.date.fromisoformat(date)
+    for offset in range(len(CLASSIC_NAMES)):
+        theme, code = classic_scene(day, offset)
+        if theme == status.get('previous_theme'):
+            continue
+        try:
+            activate_scene(code, date, theme, status)
+            return
+        except (ValueError, SyntaxError, RuntimeError, OSError, subprocess.TimeoutExpired) as exc:
+            failures.append(str(exc)[:300])
+    status.update(success=False, error='Classic fallbacks failed: '+'; '.join(failures))
+    (DATA/'generation.json').write_text(json.dumps(status, indent=2))
+    raise SystemExit(1)
+
+
 def run(force=False, retry_saved=False):
     os.environ['TZ'] = 'Europe/London'
     time.tzset()
@@ -202,6 +224,8 @@ def run(force=False, retry_saved=False):
                 return
             code = extract_code((DATA/'last-model-output.txt').read_text())
             status['recovered_from_saved_output'] = True
+            status['source'] = 'local_model'
+            status.pop('model_success', None)
             theme = THEMES[datetime.date.today().toordinal() % len(THEMES)]
             try:
                 activate_scene(code, date, theme, status)
@@ -211,12 +235,17 @@ def run(force=False, retry_saved=False):
                 raise
             return
         if not force and status.get('date') == date:
+            if not status.get('success'):
+                activate_fallback(date, status)
+                return
             print('Already attempted today; keeping current scene')
             return
         if not force and datetime.datetime.now().hour >= 6:
             print('Outside generation window; waiting until tonight')
             return
-        status = {'date': date, 'success': False, 'attempts': 0}
+        previous_theme = status.get('theme') if status.get('success') else status.get('previous_theme')
+        status = {'date': date, 'success': False, 'attempts': 0,
+                  'previous_theme': previous_theme, 'source': 'local_model'}
         status_path.write_text(json.dumps(status))
         theme = THEMES[datetime.date.today().toordinal() % len(THEMES)]
         errors = ''
@@ -245,12 +274,12 @@ def run(force=False, retry_saved=False):
                 code = extract_code(generated.stdout)
                 activate_scene(code, date, theme, status)
                 return
-            except (ValueError, SyntaxError, RuntimeError, subprocess.TimeoutExpired) as exc:
+            except (ValueError, SyntaxError, RuntimeError, OSError, subprocess.TimeoutExpired) as exc:
                 errors = 'Previous attempt failed: '+str(exc)[:300]+'. Simplify the code.'
                 status['error'] = str(exc)[:1000]
                 status_path.write_text(json.dumps(status, indent=2))
                 print('Attempt failed; keeping existing scene: '+str(exc)[:300], flush=True)
-        raise SystemExit(1)
+        activate_fallback(date, status)
 
 
 if __name__ == '__main__':
