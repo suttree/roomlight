@@ -113,12 +113,20 @@ class Canvas:
             raise ValueError('Line width must be 1..12')
         return getattr(self.pen, method)(xy, **kwargs)
 
-    def line(self, xy, fill=None, width=1):
+    def line(self, xy, *args, **kwargs):
         # Tiny coding models often pass the two endpoints separately.
         if (len(xy) == 2 and all(isinstance(x, (int, float)) for x in xy)
-                and isinstance(fill, (tuple, list)) and len(fill) == 2):
-            xy, fill = (xy, fill), (180, 220, 240)
-        return self.paint('line', xy, fill=fill, width=width)
+                and args and isinstance(args[0], (tuple, list)) and len(args[0]) == 2):
+            xy, args = (xy, args[0]), args[1:]
+            if not args:
+                kwargs.setdefault('fill', (180, 220, 240))
+        if len(args) > 2:
+            raise TypeError('Too many line arguments')
+        for name, value in zip(('fill', 'width'), args):
+            if name in kwargs:
+                raise TypeError('Repeated line argument: '+name)
+            kwargs[name] = value
+        return self.paint('line', xy, **kwargs)
 
     def ellipse(self, xy, fill=None, outline=None, width=1):
         # A single point denotes a small dot; four values still denote a box.

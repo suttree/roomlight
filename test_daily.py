@@ -82,6 +82,15 @@ class SceneTests(unittest.TestCase):
         self.assertTrue(awake(6))
         self.assertTrue(awake(23))
 
+    def test_line_endpoints_accept_explicit_colour(self):
+        code = '''def draw_frame(draw, t, audio, width, height):
+    draw.line((10,10), (10,30), fill=(20,200,80), width=3)
+    draw.line((20,10,20,30), (90,100,110), 2)
+'''
+        image = draw_scene(compile_scene(code), 0, {})
+        self.assertEqual(image.getpixel((10,20)), (20,200,80))
+        self.assertEqual(image.getpixel((20,20)), (90,100,110))
+
     def test_acceptance_and_once_per_day(self):
         with tempfile.TemporaryDirectory() as folder, patch.object(generate_daily, 'DATA', Path(folder)):
             data = Path(folder)

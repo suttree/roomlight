@@ -29,15 +29,14 @@ No imports or other functions. RGB colours must be integer tuples from 0 to 255.
 Use at most 12 shapes. Keep all coordinates within the screen.
 Audio must visibly change size and brightness, even at level 0.2. Use large
 changes such as size=8+100*strength and colour components=50+200*strength.
-Here is a working example. Write a DIFFERENT composition for the requested theme:
-def draw_frame(draw, t, audio, width, height):
-    strength = audio['pulse'] if audio['quiet'] else audio['level']
-    for i in range(12):
-        angle = i * math.pi / 6 + t * 0.4
-        x = 180 + 90 * math.cos(angle)
-        y = 180 + 90 * math.sin(angle)
-        r = 6 + 25 * strength
-        draw.ellipse((x-r, y-r, x+r, y+r), fill=(60, 210, 180))
+Start with: def draw_frame(draw, t, audio, width, height):
+Then set strength = audio['pulse'] if audio['quiet'] else audio['level'].
+Use exactly ONE for loop and ONE drawing call inside it. Draw only the requested
+design. Do not add a background or another composition.
+For a line use draw.line((x1,y1,x2,y2), fill=(r,g,b), width=4).
+For a circle outline use draw.ellipse((x-r,y-r,x+r,y+r), outline=(r,g,b), width=2).
+For a filled dot use draw.ellipse((x-r,y-r,x+r,y+r), fill=(r,g,b)).
+Use one coordinate tuple. Put colour and stroke width in the drawing call.
 '''
 THEMES = ['orbiting moons', 'sound ripples', 'a geometric flower',
           'a constellation', 'waves', 'a spiral of dots',
@@ -179,7 +178,7 @@ def activate_scene(code, date, theme, status):
     status.update(success=True, theme=theme, sha256=hashlib.sha256(code.encode()).hexdigest(),
                   validation=checked.stdout.strip())
     status_path.write_text(json.dumps(status, indent=2))
-    print('New local-model scene accepted: '+theme, flush=True)
+    print('Scene accepted: '+theme+' ('+status.get('source', 'local_model')+')', flush=True)
 
 
 def run(force=False, retry_saved=False):

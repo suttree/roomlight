@@ -51,6 +51,9 @@ The 0.5B model uses explicit geometry briefs across sixteen scene families, with
 daily changes to colour, shape count and speed. It writes the drawing function
 from that brief; it is not an unrestricted art generator. Freeform prompting
 proved unreliable in the initial Pi test.
+The prompt gives drawing-call syntax and requests one loop with one drawing call.
+It avoids a complete example scene, which the small model tended to copy and
+combine with the requested design, exceeding the rendering budget.
 
 The rotation includes classic spectrum bars, a mirrored equaliser, a radial
 spectrum and an oscilloscope-style wave. The spectrum styles use 24 microphone
@@ -74,7 +77,8 @@ The audio check compares silence with a moderate level of 0.2. At least 0.5%
 of screen pixels must change by 12 colour values or more, averaged over three
 frames, so a barely visible response cannot pass on pixel inequality alone.
 The interface accepts Pillow-style calls, plus separate endpoints for a line
-and a single centre point for a small dot, to tolerate common small-model output.
+with an optional explicit colour, and a single centre point for a small dot,
+to tolerate common small-model output.
 The loader also accepts a single named drawing function using the expected
 arguments, with an optional omitted `height` argument. It normalises only the
 function header, then runs the same syntax, audio and rendering checks.
