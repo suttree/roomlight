@@ -128,27 +128,28 @@ class Analysis:
         self.display_level += (self.level-self.display_level)*blend
 
 
-def render(state, now, bpm, error=False):
+def render(state, now, error=False):
     quiet = now-state.last_sound > 3
-    pulse = math.exp(-((now*bpm/60) % 1)*5) if quiet else state.display_level
+    if quiet and not error:
+        return Image.new('RGB', (SIZE, SIZE), 'black')
     image = Image.new('RGB', (SIZE, SIZE), '#080e19')
     draw = ImageDraw.Draw(image)
-    colour = (90, 148, 230) if quiet else (62, 224, 185)
-    radius = 48 + int(22*pulse)
+    colour = (62, 224, 185)
+    radius = 48 + int(22*state.display_level)
     for extra, shade in ((16, .15), (8, .3), (0, 1)):
         r = radius+extra
         draw.ellipse((180-r, 139-r, 180+r, 139+r), outline=tuple(int(c*shade) for c in colour), width=2)
     draw.ellipse((174, 133, 186, 145), fill=colour)
     draw.text((24, 23), 'ROOM / 01', fill=(130, 148, 173), font=FONT)
     for i, value in enumerate(state.display_bars):
-        height = 3 + int(value*72) if not quiet else 3+int(6*pulse)
+        height = 3 + int(value*72)
         x = 24+i*13
         box = (x, 294-height, x+8, 294)
         if hasattr(draw, 'rounded_rectangle'):
             draw.rounded_rectangle(box, radius=3, fill=colour)
         else:  # Pillow shipped with Raspberry Pi OS Buster
             draw.rectangle(box, fill=colour)
-    label = 'MIC DISCONNECTED' if error else ('QUIET / %d BPM' % bpm if quiet else 'LISTENING')
+    label = 'MIC DISCONNECTED' if error else 'LISTENING'
     draw.text((24, 323), label, fill=(130, 148, 173), font=FONT)
     return image
 
@@ -157,7 +158,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', default='plughw:CARD=Device,DEV=0')
     parser.add_argument('--framebuffer', default='/dev/fb0')
-    parser.add_argument('--bpm', type=int, default=72)
     parser.add_argument('--noise-floor', type=float, default=.008)
     parser.add_argument('--preview', type=Path)
     parser.add_argument('--fps', type=int, default=30)
@@ -175,7 +175,7 @@ def main():
         t = np.arange(BLOCK)/RATE
         state.update((10000*np.sin(2*np.pi*440*t)).astype(np.int16), 1)
         state.animate(1)
-        render(state, 1, args.bpm).resize((720, 720)).save(args.preview)
+        render(state, 1).resize((720, 720)).save(args.preview)
         return
     fb = Framebuffer(args.framebuffer)
     process = None
@@ -203,9 +203,9 @@ def main():
                 state.update(samples, now)
             state.animate(now-previous)
             previous = now
-            image = daily.render(state, now, args.bpm) if daily else None
+            image = daily.render(state, now) if daily else None
             if image is None:
-                image = render(state, now, args.bpm, process.poll() is not None)
+                image = render(state, now, error=process.poll() is not None)
             fb.show(image)
             frames += 1
             end = time.monotonic()

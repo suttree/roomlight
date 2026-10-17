@@ -5,13 +5,25 @@ from pathlib import Path
 
 import numpy as np
 
-from scenes import compile_scene
+from scenes import compile_scene, DailyScene
 from validate_scene import audio_response
-from visualiser import Analysis, BLOCK, RATE
+from visualiser import Analysis, BLOCK, RATE, render
 from classic_scenes import classic_scene
 
 
 class AudioTests(unittest.TestCase):
+    def test_quiet_blanks_all_renderers_and_sound_resumes_them(self):
+        state = Analysis(.002)
+        scene = DailyScene('examples/2026-10-17-constrained-flower.py')
+        state.last_sound = 1
+        state.display_level = .5
+        for now in (5, 10):
+            self.assertIsNone(render(state, now).getbbox())
+            self.assertIsNone(scene.render(state, now).getbbox())
+        state.last_sound = 11
+        self.assertIsNotNone(render(state, 11).getbbox())
+        self.assertIsNotNone(scene.render(state, 11).getbbox())
+
     def test_classic_fallbacks_respond_to_audio(self):
         for offset in range(4):
             name, code = classic_scene(datetime.date(2026, 10, 16), offset)

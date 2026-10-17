@@ -28,7 +28,10 @@ class ConstrainedTests(unittest.TestCase):
                         audio = dict(level=1., bands=(1.,)*24, quiet=quiet, pulse=.7)
                         pictures = {draw_scene(scene, t, audio).tobytes()
                                     for t in (.3, 1.7, 4.2, 1000000.7)}
-                        self.assertGreater(len(pictures), 1)
+                        if quiet:
+                            self.assertEqual(pictures, {bytes(360*360*3)})
+                        else:
+                            self.assertGreater(len(pictures), 1)
 
 
     def test_missing_definitions_and_unbounded_values_are_rejected(self):

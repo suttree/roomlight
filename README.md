@@ -3,7 +3,7 @@
 A microphone-driven display for the Pi 3 and legacy HyperPixel square screen.
 Project repository: [suttree/roomlight](https://github.com/suttree/roomlight).
 Frequency bars and a circle react to sound. After three seconds below the
-noise threshold, the circle pulses silently at 72 BPM. This is an amplitude
+noise threshold, the display goes black. It resumes as soon as sound returns. This is an amplitude
 and frequency visualiser, not a music beat tracker. No audio is saved or sent.
 
 Requires Python 3, NumPy, Pillow, ALSA's `arecord`, and access to `/dev/fb0`.
@@ -21,7 +21,7 @@ python3 visualiser.py
 
 Press Ctrl+C to stop. The previous framebuffer contents are restored.
 Use `--noise-floor 0.015` if room noise keeps it active, or a smaller value if
-it doesn't respond. `--bpm 90` changes the quiet pulse rate. `--device` selects
+it doesn't respond. `--device` selects
 an ALSA capture device. The default uses the USB microphone's card name rather
 than its changeable card number. Unplugging the mic shows an error; restart
 after reconnecting it.
@@ -63,8 +63,8 @@ structure before the normal isolated rendering and audio checks run.
 The rotation includes classic spectrum bars, a mirrored equaliser, a radial
 spectrum and an oscilloscope-style wave. The spectrum styles use 24 microphone
 frequency bands, grouped into 8 to 12 shapes. The wave is a sine animation driven
-by audio level, not a trace of raw microphone samples. All four use the silent
-pulse when the room is quiet and must pass the usual validation before activation.
+by audio level, not a trace of raw microphone samples. Every scene goes black when the room is quiet and must pass the usual validation
+before activation. The microphone keeps listening so sound wakes the display.
 
 At 00:00 London time the service stops microphone capture and turns off the
 HyperPixel backlight. At 00:10 the model gets up to two attempts to write a short
@@ -77,7 +77,7 @@ scene. After both model attempts fail, a handwritten classic theme goes through 
 validation and replaces the previous scene. The four classic styles rotate by
 date, vary their colour and avoid the previous accepted theme. If a classic fails
 validation, the next is tried. Only failure of every candidate keeps the old scene. Runtime errors fall back to
-the original bars and pulse. Drawing runs under the `visdisplay` system account
+the original bars and circle. Drawing runs under the `visdisplay` system account
 with no network access and a read-only system filesystem. This combines syntax
 restrictions with OS process isolation; Python syntax checks alone are not a
 security boundary.

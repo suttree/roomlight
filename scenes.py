@@ -149,6 +149,8 @@ class Canvas:
 
 
 def draw_scene(function, t, audio, budget=.04):
+    if audio.get('quiet', False):
+        return Image.new('RGB', (360, 360), 'black')
     image = Image.new('RGB', (360, 360), '#080e19')
     with deadline(budget):
         function(Canvas(image), t, audio, 360, 360)
@@ -162,7 +164,7 @@ class DailyScene:
         self.function = None
         self.next_check = 0
 
-    def render(self, state, now, bpm):
+    def render(self, state, now):
         if now >= self.next_check:
             self.next_check = now+30
             try:
@@ -182,7 +184,7 @@ class DailyScene:
         quiet = now-state.last_sound > 3
         audio = {'level': float(state.display_level),
                  'bands': tuple(float(x) for x in state.display_bars),
-                 'quiet': quiet, 'pulse': math.exp(-((now*bpm/60) % 1)*5)}
+                 'quiet': quiet, 'pulse': 0.0}
         try:
             return draw_scene(self.function, now, audio)
         except Exception as exc:
