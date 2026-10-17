@@ -47,13 +47,17 @@ layouts retain a generic conversion path.
 The installed version uses Qwen2.5-Coder-0.5B-Instruct, quantised to Q4_K_M,
 through llama.cpp b3889. Inference runs entirely on the Pi. It receives a drawing
 prompt, date and theme, without microphone recordings or transcripts.
-The 0.5B model uses explicit geometry briefs across sixteen scene families, with
-daily changes to colour, shape count and speed. It writes the drawing function
-from that brief; it is not an unrestricted art generator. Freeform prompting
-proved unreliable in the initial Pi test.
-The prompt gives drawing-call syntax and requests one loop with one drawing call.
-It avoids a complete example scene, which the small model tended to copy and
-combine with the requested design, exceeding the rendering budget.
+Generation uses a llama.cpp grammar with sixteen tested Python scene structures.
+The model emits the complete drawing function, choosing from bounded motion
+speeds, phase offsets, audio gains and daily colour palettes. The grammar fixes
+variable definitions, the eight-shape loop and drawing calls. It cannot omit
+`strength`, use an undefined `i` or add another drawing loop.
+
+This is deliberately constrained variation within handwritten compositions,
+not freeform code invention. The previous prompt-only approach repeatedly
+produced invalid code on the 0.5B model. The output must also match the selected
+structure before the normal isolated rendering and audio checks run.
+`generation_format: constrained_python_v1` identifies these runs in the status.
 
 The rotation includes classic spectrum bars, a mirrored equaliser, a radial
 spectrum and an oscilloscope-style wave. The spectrum styles use 24 microphone
@@ -115,7 +119,10 @@ cat /var/lib/room-visualiser/generation.json
 After fixing a compatibility problem, revalidate today's failed model output
 without another inference run with
 `sudo python3 /opt/room-visualiser/generate_daily.py --retry-saved`.
-It only accepts output from today's failed job and still requires validation.
+It only accepts output from today's job and still requires validation. It can
+replace an active classic fallback after a parser fix, but preserves the fallback
+if validation fails. The llama.cpp end-of-generation marker is stripped before
+parsing; generated Python is otherwise unchanged.
 
 To test generation during the day, stop the schedule timer and display first
 so the model has the Pi's memory and CPU, then restore the schedule:
@@ -137,5 +144,9 @@ The downloaded Q4_K_M file has SHA256
 Runtime source: [llama.cpp b3889](https://github.com/ggml-org/llama.cpp/tree/b3889),
 built on the 32-bit Buster Pi with `make -j2 llama-cli`.
 
-Run `python3 -m unittest -v test_daily test_audio` for audio sensitivity, scheduler, validation and rollback
+Run `python3 -m unittest -v test_daily test_audio test_constrained` for audio sensitivity, scheduler, validation and rollback
 checks. `example_scene.py` is a handwritten test fixture, not generated output.
+
+`examples/2026-10-17-constrained-flower.py` is the actual constrained model output
+from the Pi trial, accepted after fixing CLI marker handling, without manual
+changes to the drawing code.

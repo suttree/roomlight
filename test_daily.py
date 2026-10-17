@@ -17,6 +17,10 @@ GOOD = '''def draw_frame(draw, t, audio, width, height):
 
 
 class SceneTests(unittest.TestCase):
+    def test_cli_end_marker_is_not_python(self):
+        self.assertEqual(generate_daily.extract_code(GOOD+' [end of text]\n'), GOOD)
+        self.assertEqual(generate_daily.extract_code('```python\n'+GOOD+'``` [end of text]\n'), GOOD)
+
     def test_named_function_with_omitted_height_is_normalised(self):
         output = '```python\nimport math\n'+GOOD.replace(
             'draw_frame(draw, t, audio, width, height)',
@@ -44,6 +48,32 @@ class SceneTests(unittest.TestCase):
             validator.assert_called_once()
             self.assertEqual((data/'current.py').read_text(), GOOD)
             self.assertTrue(json.loads((data/'generation.json').read_text())['success'])
+
+    def test_saved_recovery_preserves_fallback_when_validation_fails(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(generate_daily, 'DATA', Path(folder)):
+            data = Path(folder)
+            status = {'date': datetime.date.today().isoformat(), 'success': True,
+                      'source': 'classic_fallback', 'theme': 'a radial spectrum'}
+            (data/'generation.json').write_text(json.dumps(status))
+            (data/'current.py').write_text('working fallback')
+            (data/'last-model-output.txt').write_text(GOOD+' [end of text]\n')
+            with patch('generate_daily.subprocess.run', return_value=subprocess.CompletedProcess([], 1, '', 'too slow')), self.assertRaises(RuntimeError):
+                generate_daily.run(retry_saved=True)
+            result = json.loads((data/'generation.json').read_text())
+            self.assertTrue(result['success'])
+            self.assertEqual(result['source'], 'classic_fallback')
+            self.assertEqual((data/'current.py').read_text(), 'working fallback')
+
+    def test_saved_recovery_can_replace_a_classic_fallback(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(generate_daily, 'DATA', Path(folder)):
+            data = Path(folder)
+            (data/'generation.json').write_text(json.dumps({
+                'date': datetime.date.today().isoformat(), 'success': True, 'source': 'classic_fallback'}))
+            (data/'last-model-output.txt').write_text(GOOD+' [end of text]\n')
+            with patch('generate_daily.run_model') as model, patch('generate_daily.subprocess.run', return_value=subprocess.CompletedProcess([], 0, '{}', '')):
+                generate_daily.run(retry_saved=True)
+            model.assert_not_called()
+            self.assertEqual(json.loads((data/'generation.json').read_text())['source'], 'local_model')
 
     def test_rejects_access_outside_drawing_interface(self):
         bad = [
@@ -103,6 +133,9 @@ class SceneTests(unittest.TestCase):
                 generate_daily.run()
                 self.assertEqual(run.call_count, 1)
                 self.assertEqual(model.call_count, 1)
+                command = model.call_args[0][0]
+                self.assertIn('--grammar-file', command)
+                self.assertTrue((data/'scene.gbnf').exists())
 
     def test_failed_generation_preserves_previous_scene(self):
         with tempfile.TemporaryDirectory() as folder, patch.object(generate_daily, 'DATA', Path(folder)):
