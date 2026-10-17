@@ -1,6 +1,7 @@
-# Room visualiser
+# Roomlight
 
 A microphone-driven display for the Pi 3 and legacy HyperPixel square screen.
+Project repository: [suttree/roomlight](https://github.com/suttree/roomlight).
 Frequency bars and a circle react to sound. After three seconds below the
 noise threshold, the circle pulses silently at 72 BPM. This is an amplitude
 and frequency visualiser, not a music beat tracker. No audio is saved or sent.
