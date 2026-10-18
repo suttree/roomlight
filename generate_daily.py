@@ -13,16 +13,22 @@ from pathlib import Path
 
 from scenes import check_source
 from classic_scenes import classic_scene, NAMES as CLASSIC_NAMES
-from constrained_scene import THEMES, grammar_for, matches_spec
+from constrained_scene import THEMES, matches_spec
+from method_generation import grammar_for_method, matches_method, layout_signature
 
 BASE = Path('/opt/room-visualiser')
 DATA = Path('/var/lib/room-visualiser')
 MODEL = Path('/opt/room-visualiser-model/qwen-coder.gguf')
 CLI = Path('/opt/room-visualiser-model/llama-cli')
 
-INSTRUCTIONS = """Write one Python audio visualiser function, code only.
-Follow the supplied grammar exactly. Choose motion speed, phase, audio gain and
-colour for today's theme. Keep every required definition and drawing call.
+INSTRUCTIONS = """Write a new audio-reactive Python drawing method, code only.
+Invent the x and y motion formulas using time t and particle index i. Use i in
+both coordinates to spread the eight shapes; use t so they move. Combine sine,
+cosine, multiplication, sums or modulo to create a distinctive layout.
+Choose circles, rings, squares, outlined squares, rotating lines or triangles.
+Choose a colour and an angle formula. The grammar supplies the loop, audio energy
+and reactive size. Do not repeat yesterday's layout. The theme is inspiration,
+not a template to copy. Make the spatial pattern interesting across the screen.
 """
 
 
@@ -74,8 +80,8 @@ def run_model(command, seconds=2700):
         result = subprocess.run(sandbox(command, 'vis-model', '800M', seconds),
                                 stdout=out, stderr=err, timeout=seconds+30)
     text = output.read_text()
-    if result.returncode == 0 and not matches_spec(extract_code(text), datetime.date.today()):
-        raise ValueError('Incomplete or nonconforming constrained scene')
+    if result.returncode == 0 and not matches_method(extract_code(text)):
+        raise ValueError('Incomplete drawing method or undefined variables')
     return subprocess.CompletedProcess(command, result.returncode,
                                        text, diagnostics.read_text())
 
@@ -86,6 +92,11 @@ def activate_scene(code, date, theme, status):
     current = DATA/'current.py'
     if current.exists() and current.read_text().strip() == code.strip():
         raise ValueError('This repeats the current scene. Use a different layout and colours.')
+    if (status.get('generation_format') == 'procedural_python_v2'
+            and status.get('source') == 'local_model' and current.exists()
+            and matches_method(current.read_text())
+            and layout_signature(code) == layout_signature(current.read_text())):
+        raise ValueError('This repeats the previous layout with only numeric or colour changes. Change the formulas or shape.')
     candidate = DATA/'candidate.py'
     candidate.write_text(code)
     candidate.chmod(0o644)
@@ -151,6 +162,9 @@ def run(force=False, retry_saved=False):
             if (status.get('generation_format') == 'constrained_python_v1'
                     and not matches_spec(code, datetime.date.today())):
                 raise ValueError('Saved output does not match the constrained scene')
+            if (status.get('generation_format') == 'procedural_python_v2'
+                    and not matches_method(code)):
+                raise ValueError('Saved output is not a valid procedural method')
             original_status = status.copy()
             status['recovered_from_saved_output'] = True
             status['source'] = 'local_model'
@@ -179,10 +193,10 @@ def run(force=False, retry_saved=False):
         previous_theme = status.get('theme') if status.get('success') else status.get('previous_theme')
         status = {'date': date, 'success': False, 'attempts': 0,
                   'previous_theme': previous_theme, 'source': 'local_model',
-                  'generation_format': 'constrained_python_v1'}
+                  'generation_format': 'procedural_python_v2'}
         status_path.write_text(json.dumps(status))
         theme = THEMES[datetime.date.today().toordinal() % len(THEMES)]
-        _, grammar = grammar_for(datetime.date.today())
+        grammar = grammar_for_method()
         (DATA/'scene.gbnf').write_text(grammar)
         errors = ''
         for attempt in range(2):
@@ -201,9 +215,9 @@ def run(force=False, retry_saved=False):
             (DATA/'prompt.txt').write_text(prompt)
             try:
                 command = [str(CLI), '-m', str(MODEL), '-f', str(DATA/'prompt.txt'),
-                           '-c', '2048', '-n', '600', '-t', '3', '-b', '64',
+                           '-c', '2048', '-n', '700', '-t', '3', '-b', '64',
                            '--grammar-file', str(DATA/'scene.gbnf'),
-                           '--temp', '0.65', '--seed', str(int(time.time()) % 2147483647),
+                           '--temp', '0.8', '--seed', str(int(time.time()) % 2147483647),
                            '--no-display-prompt']
                 generated = run_model(command, seconds)
                 if generated.returncode:
@@ -212,7 +226,11 @@ def run(force=False, retry_saved=False):
                 activate_scene(code, date, theme, status)
                 return
             except (ValueError, SyntaxError, RuntimeError, OSError, subprocess.TimeoutExpired) as exc:
-                errors = 'Previous attempt failed: '+str(exc)[:300]+'. Simplify the code.'
+                errors = 'Previous attempt failed: '+str(exc)[:300]+'. '
+                if 'too subtle' in str(exc):
+                    errors += 'Use i in both position formulas so shapes do not overlap. Try filled squares or triangles.'
+                else:
+                    errors += 'Choose different position formulas and a different drawing primitive.'
                 status['error'] = str(exc)[:1000]
                 status_path.write_text(json.dumps(status, indent=2))
                 print('Attempt failed; keeping existing scene: '+str(exc)[:300], flush=True)

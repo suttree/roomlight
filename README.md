@@ -48,17 +48,24 @@ layouts retain a generic conversion path.
 The installed version uses Qwen2.5-Coder-0.5B-Instruct, quantised to Q4_K_M,
 through llama.cpp b3889. Inference runs entirely on the Pi. It receives a drawing
 prompt, date and theme, without microphone recordings or transcripts.
-Generation uses a llama.cpp grammar with sixteen tested Python scene structures.
-The model emits the complete drawing function, choosing from bounded motion
-speeds, phase offsets, audio gains and daily colour palettes. The grammar fixes
-variable definitions, the eight-shape loop and drawing calls. It cannot omit
-`strength`, use an undefined `i` or add another drawing loop.
+Generation uses a Python grammar that keeps the function signature, eight-shape
+loop and audio-energy definitions intact. The model writes the x and y position
+expressions, combines time and shape index with arithmetic, sine, cosine or
+modulo, and chooses colours, angle formulas and drawing primitives. Position
+expressions include a required shape-index offset to reduce accidental overlap. It can use
+filled or outlined circles and squares, rotating lines, and triangles.
 
-This is deliberately constrained variation within handwritten compositions,
-not freeform code invention. The previous prompt-only approach repeatedly
-produced invalid code on the 0.5B model. The output must also match the selected
-structure before the normal isolated rendering and audio checks run.
-`generation_format: constrained_python_v1` identifies these runs in the status.
+These expressions compose new layouts rather than selecting one of sixteen
+finished scene bodies. The grammar still limits the available Python language,
+coordinates, shape count and drawing APIs to suit the Pi. Theme names are prompt
+inspiration, not a guarantee of what the resulting scene depicts.
+`generation_format: procedural_python_v2` identifies these runs. A structural
+comparison rejects the immediately previous procedural layout when only its
+numbers or colour have changed. This is a code comparison, not a visual novelty
+score, so distinct formulas can still produce similar-looking results.
+
+The previous `constrained_python_v1` mode only varied parameters within fixed
+compositions. Its fixtures remain for regression tests and saved-output recovery.
 
 The rotation includes classic spectrum bars, a mirrored equaliser, a radial
 spectrum and an oscilloscope-style wave. The spectrum styles use 24 microphone
@@ -145,9 +152,14 @@ The downloaded Q4_K_M file has SHA256
 Runtime source: [llama.cpp b3889](https://github.com/ggml-org/llama.cpp/tree/b3889),
 built on the 32-bit Buster Pi with `make -j2 llama-cli`.
 
-Run `python3 -m unittest -v test_daily test_audio test_constrained` for audio sensitivity, scheduler, validation and rollback
+Run `python3 -m unittest -v test_daily test_audio test_constrained test_method_generation` for audio sensitivity, scheduler, validation and rollback
 checks. `example_scene.py` is a handwritten test fixture, not generated output.
 
 `examples/2026-10-17-constrained-flower.py` is the actual constrained model output
 from the Pi trial, accepted after fixing CLI marker handling, without manual
 changes to the drawing code.
+
+`examples/2026-10-18-procedural-orbits.py` is an unedited model-generated method
+from the procedural trial. It draws grey rings whose positions and sizes respond
+to audio. After adding the index-spacing rule, the trial passed on its first
+attempt, with 8.81 ms mean drawing time and 2.38% changed pixels in the audio test.
