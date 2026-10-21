@@ -14,7 +14,7 @@ from pathlib import Path
 from scenes import check_source
 from classic_scenes import classic_scene, NAMES as CLASSIC_NAMES
 from constrained_scene import THEMES, matches_spec
-from method_generation import grammar_for_method, matches_method, layout_signature
+from method_generation import grammar_for_method, matches_method, layout_signature, motion_policy
 
 BASE = Path('/opt/room-visualiser')
 DATA = Path('/var/lib/room-visualiser')
@@ -169,7 +169,7 @@ def run(force=False, retry_saved=False):
             status['recovered_from_saved_output'] = True
             status['source'] = 'local_model'
             status.pop('model_success', None)
-            theme = THEMES[datetime.date.today().toordinal() % len(THEMES)]
+            theme = status.get('requested_theme', THEMES[datetime.date.today().toordinal() % len(THEMES)])
             try:
                 activate_scene(code, date, theme, status)
             except (ValueError, SyntaxError, RuntimeError, subprocess.TimeoutExpired) as exc:
@@ -196,7 +196,11 @@ def run(force=False, retry_saved=False):
                   'generation_format': 'procedural_python_v2'}
         status_path.write_text(json.dumps(status))
         theme = THEMES[datetime.date.today().toordinal() % len(THEMES)]
-        grammar = grammar_for_method()
+        policy, _, _ = motion_policy(datetime.date.today())
+        if policy != 'open motion':
+            theme = policy
+        status.update(motion_policy=policy, requested_theme=theme)
+        grammar = grammar_for_method(datetime.date.today())
         (DATA/'scene.gbnf').write_text(grammar)
         errors = ''
         for attempt in range(2):
@@ -210,6 +214,7 @@ def run(force=False, retry_saved=False):
             status_path.write_text(json.dumps(status, indent=2))
             prompt = ('<|im_start|>system\n'+INSTRUCTIONS+'<|im_end|>\n'
                       '<|im_start|>user\nToday: '+date+'. Theme: '+theme+'. '
+                      +'Motion rule: '+policy+'. Follow the motion rule. '
                       +errors+
                       '\nWrite the function now.<|im_end|>\n<|im_start|>assistant\n')
             (DATA/'prompt.txt').write_text(prompt)

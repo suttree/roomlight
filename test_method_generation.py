@@ -1,3 +1,4 @@
+import datetime
 import json
 import subprocess
 import tempfile
@@ -6,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import generate_daily
-from method_generation import PREFIX, grammar_for_method, layout_signature, matches_method
+from method_generation import PREFIX, grammar_for_method, layout_signature, matches_method, motion_policy
 from scenes import compile_scene, draw_scene
 from validate_scene import audio_response
 
@@ -29,6 +30,40 @@ class MethodTests(unittest.TestCase):
         self.assertEqual(len(pictures), 3)
         audio['quiet'] = True
         self.assertIsNone(draw_scene(scene, 3, audio).getbbox())
+
+    def test_weekly_policy_keeps_centres_on_straight_paths(self):
+        monday = datetime.date(2026, 10, 19)
+        for offset in range(7):
+            day = monday + datetime.timedelta(days=offset)
+            name, x_rule, y_rule = motion_policy(day)
+            grammar = grammar_for_method(day)
+            self.assertIn('x-coordinate ::= '+x_rule, grammar)
+            self.assertIn('y-coordinate ::= '+y_rule, grammar)
+            fixed = [rule for rule in (x_rule, y_rule) if rule != 'coordinate']
+            self.assertEqual(len(fixed), 0 if offset == 6 else 1)
+            if not fixed:
+                continue
+            expression = json.loads(fixed[0])
+            code = METHOD
+            if x_rule != 'coordinate':
+                code = code.replace('180 + 120 * math.sin(t * 0.3 + i * 0.7)', expression)
+            else:
+                code = code.replace('180 + 120 * math.cos(t * 0.2 - i * 1.3)', expression)
+            self.assertTrue(matches_method(code), name)
+            scene = compile_scene(code)
+            self.assertGreater(audio_response(scene), .005, name)
+            audio = dict(level=.5, bands=(.5,)*24, quiet=False, pulse=0)
+            self.assertNotEqual(draw_scene(scene, 0, audio).tobytes(),
+                                draw_scene(scene, 2, audio).tobytes(), name)
+            audio['quiet'] = True
+            self.assertIsNone(draw_scene(scene, 2, audio).getbbox(), name)
+            # Fixed coordinates depend only on the shape index, never time/audio.
+            for i in range(8):
+                positions = {eval(expression, {'__builtins__': {}},
+                                  dict(i=i, t=t, energy=energy))
+                             for t in (0, 2, 1000) for energy in (0, .2, 1)}
+                self.assertEqual(len(positions), 1)
+                self.assertTrue(48 <= positions.pop() <= 312)
 
     def test_undefined_variables_or_missing_definitions_are_rejected(self):
         for code in (METHOD.replace('angle = t + i', 'angle = t + missing'),

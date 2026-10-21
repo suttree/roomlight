@@ -1,5 +1,6 @@
 """A small Python grammar for composing new layouts, not selecting scene bodies."""
 import ast
+import datetime
 import json
 
 from scenes import check_source
@@ -24,13 +25,29 @@ paint ::= "draw.ellipse((x-r,y-r,x+r,y+r), fill=colour)" | "draw.ellipse((x-r,y-
 '''
 
 
-def grammar_for_method():
-    parts = [json.dumps(PREFIX+'        x = '), 'coordinate',
-             json.dumps('\n        y = '), 'coordinate',
+def motion_policy(day):
+    # Only Sunday permits two moving axes. Other days cannot form an orbit.
+    policies = (
+        ('vertical paths', '"60 + 30 * i"', 'coordinate'),
+        ('horizontal paths', 'coordinate', '"60 + 30 * i"'),
+        ('moving columns', '"60 + 75 * (i % 4)"', 'coordinate'),
+        ('moving rows', 'coordinate', '"90 + 120 * (i // 4)"'),
+        ('vertical paths', '"60 + 30 * i"', 'coordinate'),
+        ('horizontal paths', 'coordinate', '"60 + 30 * i"'),
+        ('open motion', 'coordinate', 'coordinate'))
+    return policies[day.weekday()]
+
+
+def grammar_for_method(day=None):
+    _, x_rule, y_rule = motion_policy(day or datetime.date.today())
+    parts = [json.dumps(PREFIX+'        x = '), 'x-coordinate',
+             json.dumps('\n        y = '), 'y-coordinate',
              json.dumps('\n        r = 8 + 40 * energy\n        angle = '), 'expression',
              json.dumps('\n        colour = '), 'colour',
              json.dumps('\n        '), 'paint', json.dumps('\n')]
-    return 'root ::= '+' '.join(parts)+'\n'+GRAMMAR
+    return ('root ::= '+' '.join(parts)+'\n'
+            +'x-coordinate ::= '+x_rule+'\n'
+            +'y-coordinate ::= '+y_rule+'\n'+GRAMMAR)
 
 
 def matches_method(code):

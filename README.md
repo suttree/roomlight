@@ -52,7 +52,12 @@ Generation uses a Python grammar that keeps the function signature, eight-shape
 loop and audio-energy definitions intact. The model writes the x and y position
 expressions, combines time and shape index with arithmetic, sine, cosine or
 modulo, and chooses colours, angle formulas and drawing primitives. Position
-expressions include a required shape-index offset to reduce accidental overlap. It can use
+expressions include a required shape-index offset to reduce accidental overlap.
+From Monday to Saturday, one position axis stays fixed, alternating vertical
+paths, horizontal paths, columns and rows. This prevents orbiting layouts on
+those nights. Sunday permits two moving axes, including orbits. The model still
+writes the moving-axis formula and chooses shapes, angles and colours. The
+selected rule is recorded as `motion_policy` in the generation status. It can use
 filled or outlined circles and squares, rotating lines, and triangles.
 
 These expressions compose new layouts rather than selecting one of sixteen
