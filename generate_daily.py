@@ -197,8 +197,7 @@ def run(force=False, retry_saved=False):
         status_path.write_text(json.dumps(status))
         theme = THEMES[datetime.date.today().toordinal() % len(THEMES)]
         policy, _, _ = motion_policy(datetime.date.today())
-        if policy != 'open motion':
-            theme = policy
+        theme = policy
         status.update(motion_policy=policy, requested_theme=theme)
         grammar = grammar_for_method(datetime.date.today())
         (DATA/'scene.gbnf').write_text(grammar)

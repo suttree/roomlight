@@ -53,9 +53,9 @@ loop and audio-energy definitions intact. The model writes the x and y position
 expressions, combines time and shape index with arithmetic, sine, cosine or
 modulo, and chooses colours, angle formulas and drawing primitives. Position
 expressions include a required shape-index offset to reduce accidental overlap.
-From Monday to Saturday, one position axis stays fixed, alternating vertical
-paths, horizontal paths, columns and rows. This prevents orbiting layouts on
-those nights. Sunday permits two moving axes, including orbits. The model still
+Every day, one position axis stays fixed, alternating vertical paths, horizontal
+paths, columns and rows. This prevents orbiting layouts, including on Sundays.
+The model still
 writes the moving-axis formula and chooses shapes, angles and colours. The
 selected rule is recorded as `motion_policy` in the generation status. It can use
 elliptical rings, sweeping arcs, bent ribbons, asymmetric shards and chevrons.

@@ -45,7 +45,7 @@ GRAMMAR += 'paint ::= '+ ' | '.join(json.dumps(paint) for paint in PAINTS)+'\n'
 
 
 def motion_policy(day):
-    # Only Sunday permits two moving axes. Other days cannot form an orbit.
+    # Keep one axis fixed every day so shape centres cannot orbit.
     policies = (
         ('vertical paths', '"60 + 30 * i"', 'coordinate'),
         ('horizontal paths', 'coordinate', '"60 + 30 * i"'),
@@ -53,7 +53,7 @@ def motion_policy(day):
         ('moving rows', 'coordinate', '"90 + 120 * (i // 4)"'),
         ('vertical paths', '"60 + 30 * i"', 'coordinate'),
         ('horizontal paths', 'coordinate', '"60 + 30 * i"'),
-        ('open motion', 'coordinate', 'coordinate'))
+        ('moving columns', '"60 + 75 * (i % 4)"', 'coordinate'))
     return policies[day.weekday()]
 
 

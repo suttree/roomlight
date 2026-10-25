@@ -40,9 +40,7 @@ class MethodTests(unittest.TestCase):
             self.assertIn('x-coordinate ::= '+x_rule, grammar)
             self.assertIn('y-coordinate ::= '+y_rule, grammar)
             fixed = [rule for rule in (x_rule, y_rule) if rule != 'coordinate']
-            self.assertEqual(len(fixed), 0 if offset == 6 else 1)
-            if not fixed:
-                continue
+            self.assertEqual(len(fixed), 1)
             expression = json.loads(fixed[0])
             code = METHOD
             if x_rule != 'coordinate':
