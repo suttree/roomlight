@@ -172,3 +172,11 @@ changes to the drawing code.
 from the procedural trial. It draws grey rings whose positions and sizes respond
 to audio. After adding the index-spacing rule, the trial passed on its first
 attempt, with 8.81 ms mean drawing time and 2.38% changed pixels in the audio test.
+
+The `examples/2026-10-25-rainbow-spectrum.py` scene is a handwritten classic
+spectrum: 24 independently driven frequency bars, rainbow colours, white caps,
+and a separate volume meter. It has no time-driven motion. Manual activation
+with `source: manual` and `animation_mode: audio_driven` uses the validator's
+`--audio-driven` option, retaining syntax, performance and audio-response checks
+without requiring motion under constant audio. Nightly model scenes still
+require time-driven motion.

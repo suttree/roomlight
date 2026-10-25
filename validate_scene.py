@@ -30,7 +30,7 @@ def temporal_response(function):
     return any(ImageChops.difference(frames[0], frame).getbbox() for frame in frames[1:])
 
 
-def validate(path):
+def validate(path, require_time_motion=True):
     resource.setrlimit(resource.RLIMIT_AS, (192*1024*1024, 192*1024*1024))
     resource.setrlimit(resource.RLIMIT_CPU, (15, 15))
     source = Path(path).read_text()
@@ -51,7 +51,7 @@ def validate(path):
         raise ValueError('Scene drawing too slow: %.1f ms' % (mean*1000))
     if len(pictures) < 3:
         raise ValueError('Scene does not animate')
-    if not temporal_response(function):
+    if require_time_motion and not temporal_response(function):
         raise ValueError('Scene does not move with constant audio. Use time in visible positions or drawing angles.')
     response = audio_response(function)
     if response < .005:
@@ -62,7 +62,7 @@ def validate(path):
 
 if __name__ == '__main__':
     try:
-        print(json.dumps(validate(sys.argv[1])))
+        print(json.dumps(validate(sys.argv[1], require_time_motion='--audio-driven' not in sys.argv[2:])))
     except Exception as exc:
         print('Validation failed: '+str(exc), file=sys.stderr)
         sys.exit(1)

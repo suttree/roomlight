@@ -100,8 +100,10 @@ def activate_scene(code, date, theme, status):
     candidate = DATA/'candidate.py'
     candidate.write_text(code)
     candidate.chmod(0o644)
-    checked = subprocess.run(sandbox(['/usr/bin/python3', str(BASE/'validate_scene.py'),
-                                      str(candidate)], 'vis-validate'),
+    validation_command = ['/usr/bin/python3', str(BASE/'validate_scene.py'), str(candidate)]
+    if status.get('source') == 'manual' and status.get('animation_mode') == 'audio_driven':
+        validation_command.append('--audio-driven')
+    checked = subprocess.run(sandbox(validation_command, 'vis-validate'),
                              capture_output=True, text=True, timeout=35)
     if checked.returncode:
         raise RuntimeError(checked.stderr[-800:])
