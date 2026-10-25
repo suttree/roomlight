@@ -33,7 +33,7 @@ PALETTES = (
 # Each is a single bounded drawing call, compatible with the Pi's older Pillow.
 PAINTS = (
     'draw.ellipse((x-r,y-r*.5,x+r,y+r*.5), outline=colour, width=4)',
-    'draw.arc((x-r,y-r,x+r,y+r), start=angle*57.3, end=angle*57.3+240, fill=colour, width=6)',
+    'draw.arc((x-r,y-r,x+r,y+r), start=(angle*57.3)%360, end=(angle*57.3)%360+240, fill=colour, width=6)',
     'draw.line((x-r,y+r*math.sin(angle),x-r*.3,y-r,x+r*.3,y+r,x+r,y-r*math.sin(angle)), fill=colour, width=6)',
     'draw.polygon((x-r,y,x+r*.3,y-r,x+r,y+r*.3,x-r*.2,y+r*.6), fill=colour)',
     'draw.polygon((x-r*math.cos(angle),y-r*math.sin(angle),x+r*math.sin(angle)*.4,y-r*math.cos(angle)*.4,x+r*math.cos(angle),y+r*math.sin(angle)), fill=colour)',

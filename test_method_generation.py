@@ -77,6 +77,7 @@ class MethodTests(unittest.TestCase):
                 scene = compile_scene(code)
                 self.assertGreater(audio_response(scene), .005, paint)
                 audio = dict(level=.5, bands=(.5,)*24, quiet=False, pulse=0)
+                draw_scene(scene, 1000000, audio)
                 first = draw_scene(scene, 0, audio)
                 self.assertNotEqual(first.tobytes(), draw_scene(scene, 2, audio).tobytes())
                 visible = set(first.getdata()) - {(8, 14, 25)}
