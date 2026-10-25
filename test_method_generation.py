@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import generate_daily
-from method_generation import PREFIX, grammar_for_method, layout_signature, matches_method, motion_policy
+from method_generation import PREFIX, grammar_for_method, layout_signature, matches_method, motion_policy, PALETTES, PAINTS
 from scenes import compile_scene, draw_scene
 from validate_scene import audio_response
 
@@ -64,6 +64,26 @@ class MethodTests(unittest.TestCase):
                              for t in (0, 2, 1000) for energy in (0, .2, 1)}
                 self.assertEqual(len(positions), 1)
                 self.assertTrue(48 <= positions.pop() <= 312)
+
+    def test_expressive_shapes_are_colourful_reactive_and_animate(self):
+        for palette in PALETTES:
+            self.assertEqual(len(set(palette)), 4)
+            for colour in palette:
+                self.assertGreater(max(colour)-min(colour), 120)
+            for paint in PAINTS:
+                code = METHOD.replace('(96, 224, 255)', repr(palette)+'[i % 4]')
+                code = code.replace('draw.rectangle((x-r,y-r,x+r,y+r), outline=colour, width=4)', paint)
+                self.assertTrue(matches_method(code))
+                scene = compile_scene(code)
+                self.assertGreater(audio_response(scene), .005, paint)
+                audio = dict(level=.5, bands=(.5,)*24, quiet=False, pulse=0)
+                first = draw_scene(scene, 0, audio)
+                self.assertNotEqual(first.tobytes(), draw_scene(scene, 2, audio).tobytes())
+                visible = set(first.getdata()) - {(8, 14, 25)}
+                self.assertGreaterEqual(len(visible), 3)
+                self.assertTrue(visible.issubset(set(palette)))
+                audio['quiet'] = True
+                self.assertIsNone(draw_scene(scene, 2, audio).getbbox())
 
     def test_undefined_variables_or_missing_definitions_are_rejected(self):
         for code in (METHOD.replace('angle = t + i', 'angle = t + missing'),

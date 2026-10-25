@@ -58,7 +58,9 @@ paths, horizontal paths, columns and rows. This prevents orbiting layouts on
 those nights. Sunday permits two moving axes, including orbits. The model still
 writes the moving-axis formula and chooses shapes, angles and colours. The
 selected rule is recorded as `motion_policy` in the generation status. It can use
-filled or outlined circles and squares, rotating lines, and triangles.
+elliptical rings, sweeping arcs, bent ribbons, asymmetric shards and chevrons.
+Saturated four-colour palettes cycle across the shapes; neutral colours and
+plain boxes are excluded from new model outputs.
 
 These expressions compose new layouts rather than selecting one of sixteen
 finished scene bodies. The grammar still limits the available Python language,

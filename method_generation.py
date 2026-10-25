@@ -19,10 +19,29 @@ atom ::= number | "t" | "i" | "energy" | "math.pi" | "math.sin(" simple ")" | "m
 simple ::= variable | variable " * " number | variable " + " variable | variable " - " variable
 variable ::= "t" | "i" | "energy"
 number ::= "0." [1-9] | [1-9] "." [0-9]
-channel ::= "64" | "96" | "128" | "160" | "192" | "224" | "255"
-colour ::= "(" channel ", " channel ", " channel ")"
-paint ::= "draw.ellipse((x-r,y-r,x+r,y+r), fill=colour)" | "draw.ellipse((x-r,y-r,x+r,y+r), outline=colour, width=4)" | "draw.rectangle((x-r,y-r,x+r,y+r), fill=colour)" | "draw.rectangle((x-r,y-r,x+r,y+r), outline=colour, width=4)" | "draw.line((x-r*math.cos(angle),y-r*math.sin(angle),x+r*math.cos(angle),y+r*math.sin(angle)), fill=colour, width=8)" | "draw.polygon((x,y-r,x+r,y+r,x-r,y+r), fill=colour)"
+
 '''
+
+
+# Saturated palettes cycle across the eight shapes; no neutral/white option.
+PALETTES = (
+    ((255, 72, 112), (255, 164, 48), (160, 64, 255), (40, 208, 224)),
+    ((40, 232, 168), (40, 152, 255), (176, 72, 255), (255, 64, 160)),
+    ((255, 88, 40), (255, 192, 40), (224, 48, 136), (112, 64, 240)),
+)
+
+# Each is a single bounded drawing call, compatible with the Pi's older Pillow.
+PAINTS = (
+    'draw.ellipse((x-r,y-r*.5,x+r,y+r*.5), outline=colour, width=4)',
+    'draw.arc((x-r,y-r,x+r,y+r), start=angle*57.3, end=angle*57.3+240, fill=colour, width=6)',
+    'draw.line((x-r,y+r*math.sin(angle),x-r*.3,y-r,x+r*.3,y+r,x+r,y-r*math.sin(angle)), fill=colour, width=6)',
+    'draw.polygon((x-r,y,x+r*.3,y-r,x+r,y+r*.3,x-r*.2,y+r*.6), fill=colour)',
+    'draw.polygon((x-r*math.cos(angle),y-r*math.sin(angle),x+r*math.sin(angle)*.4,y-r*math.cos(angle)*.4,x+r*math.cos(angle),y+r*math.sin(angle)), fill=colour)',
+    'draw.line((x-r,y-r,x,y+r,x+r,y-r*.4), fill=colour, width=8)',
+)
+
+GRAMMAR += 'colour ::= '+ ' | '.join(json.dumps(repr(palette)+'[i % 4]') for palette in PALETTES)+'\n'
+GRAMMAR += 'paint ::= '+ ' | '.join(json.dumps(paint) for paint in PAINTS)+'\n'
 
 
 def motion_policy(day):
