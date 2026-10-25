@@ -25,7 +25,7 @@ INSTRUCTIONS = """Write a new audio-reactive Python drawing method, code only.
 Invent the x and y motion formulas using time t and particle index i. Use i in
 both coordinates to spread the eight shapes; use t so they move. Combine sine,
 cosine, multiplication, sums or modulo to create a distinctive layout.
-Choose elliptical rings, sweeping arcs, bent ribbons, asymmetric shards or chevrons.
+Choose sweeping arcs, flowing sine ribbons or rotating shards. No chevrons.
 Choose a vivid palette and an angle formula. Colours vary across the shapes. The grammar supplies the loop, audio energy
 and reactive size. Do not repeat yesterday's layout. The theme is inspiration,
 not a template to copy. Make the spatial pattern interesting across the screen.

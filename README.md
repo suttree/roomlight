@@ -58,7 +58,9 @@ paths, columns and rows. This prevents orbiting layouts, including on Sundays.
 The model still
 writes the moving-axis formula and chooses shapes, angles and colours. The
 selected rule is recorded as `motion_policy` in the generation status. It can use
-elliptical rings, sweeping arcs, bent ribbons, asymmetric shards and chevrons.
+sweeping arcs, flowing sine ribbons and rotating shards. Chevrons are excluded.
+Moving coordinates and angles include time, and validation checks movement with
+audio held constant so audio-only size changes cannot pass as animation.
 Saturated four-colour palettes cycle across the shapes; neutral colours and
 plain boxes are excluded from new model outputs.
 

@@ -9,7 +9,7 @@ from unittest.mock import patch
 import generate_daily
 from method_generation import PREFIX, grammar_for_method, layout_signature, matches_method, motion_policy, PALETTES, PAINTS
 from scenes import compile_scene, draw_scene
-from validate_scene import audio_response
+from validate_scene import audio_response, temporal_response
 
 METHOD = PREFIX+'''        x = 180 + 120 * math.sin(t * 0.3 + i * 0.7)
         y = 180 + 120 * math.cos(t * 0.2 - i * 1.3)
@@ -83,6 +83,11 @@ class MethodTests(unittest.TestCase):
                 self.assertTrue(visible.issubset(set(palette)))
                 audio['quiet'] = True
                 self.assertIsNone(draw_scene(scene, 2, audio).getbbox())
+
+    def test_static_layout_with_unused_angle_is_not_animation(self):
+        stationary = METHOD.replace('180 + 120 * math.sin(t * 0.3 + i * 0.7)', '60 + 30 * i').replace('180 + 120 * math.cos(t * 0.2 - i * 1.3)', '180')
+        self.assertFalse(temporal_response(compile_scene(stationary)))
+        self.assertTrue(temporal_response(compile_scene(METHOD)))
 
     def test_undefined_variables_or_missing_definitions_are_rejected(self):
         for code in (METHOD.replace('angle = t + i', 'angle = t + missing'),

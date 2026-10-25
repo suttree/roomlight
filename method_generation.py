@@ -12,7 +12,7 @@ PREFIX = """def draw_frame(draw, t, audio, width, height):
 """
 
 GRAMMAR = r'''
-coordinate ::= "180 + 120 * math.sin(" expression " + i)" | "180 + 120 * math.cos(" expression " + i)" | "60 + ((" expression " + 31 * i) % 240)" | "60 + 30 * i" | "180 + (40 + 80 * energy) * math.sin(" expression " + i)" | "180 + (40 + 80 * energy) * math.cos(" expression " + i)"
+coordinate ::= "180 + 100 * math.sin(t * 0.4 + " expression " + i)" | "180 + 100 * math.cos(t * 0.3 + " expression " + i)" | "60 + ((t * 25 + " expression " + 31 * i) % 240)"
 expression ::= term | term " + " term | term " - " term
 term ::= atom | atom " * " atom
 atom ::= number | "t" | "i" | "energy" | "math.pi" | "math.sin(" simple ")" | "math.cos(" simple ")"
@@ -32,12 +32,9 @@ PALETTES = (
 
 # Each is a single bounded drawing call, compatible with the Pi's older Pillow.
 PAINTS = (
-    'draw.ellipse((x-r,y-r*.5,x+r,y+r*.5), outline=colour, width=4)',
-    'draw.arc((x-r,y-r,x+r,y+r), start=(angle*57.3)%360, end=(angle*57.3)%360+240, fill=colour, width=6)',
-    'draw.line((x-r,y+r*math.sin(angle),x-r*.3,y-r,x+r*.3,y+r,x+r,y-r*math.sin(angle)), fill=colour, width=6)',
-    'draw.polygon((x-r,y,x+r*.3,y-r,x+r,y+r*.3,x-r*.2,y+r*.6), fill=colour)',
+    'draw.arc((x-r,y-r*.6,x+r,y+r*.6), start=(angle*57.3)%360, end=(angle*57.3)%360+260, fill=colour, width=6)',
+    'draw.line((x-56,y+r*math.sin(angle+0.0),x-42,y+r*math.sin(angle+0.6),x-28,y+r*math.sin(angle+1.2),x-14,y+r*math.sin(angle+1.8),x+0,y+r*math.sin(angle+2.4),x+14,y+r*math.sin(angle+3.0),x+28,y+r*math.sin(angle+3.6),x+42,y+r*math.sin(angle+4.2),x+56,y+r*math.sin(angle+4.8)), fill=colour, width=6)',
     'draw.polygon((x-r*math.cos(angle),y-r*math.sin(angle),x+r*math.sin(angle)*.4,y-r*math.cos(angle)*.4,x+r*math.cos(angle),y+r*math.sin(angle)), fill=colour)',
-    'draw.line((x-r,y-r,x,y+r,x+r,y-r*.4), fill=colour, width=8)',
 )
 
 GRAMMAR += 'colour ::= '+ ' | '.join(json.dumps(repr(palette)+'[i % 4]') for palette in PALETTES)+'\n'
@@ -61,7 +58,7 @@ def grammar_for_method(day=None):
     _, x_rule, y_rule = motion_policy(day or datetime.date.today())
     parts = [json.dumps(PREFIX+'        x = '), 'x-coordinate',
              json.dumps('\n        y = '), 'y-coordinate',
-             json.dumps('\n        r = 8 + 40 * energy\n        angle = '), 'expression',
+             json.dumps('\n        r = 8 + 40 * energy\n        angle = t * 0.7 + i + '), 'expression',
              json.dumps('\n        colour = '), 'colour',
              json.dumps('\n        '), 'paint', json.dumps('\n')]
     return ('root ::= '+' '.join(parts)+'\n'

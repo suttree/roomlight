@@ -24,6 +24,12 @@ def audio_response(function):
     return sum(fractions)/len(fractions)
 
 
+def temporal_response(function):
+    audio = {'level': .5, 'bands': (.5,)*24, 'quiet': False, 'pulse': .5}
+    frames = [draw_scene(function, t, audio) for t in (0., .7, 1.9)]
+    return any(ImageChops.difference(frames[0], frame).getbbox() for frame in frames[1:])
+
+
 def validate(path):
     resource.setrlimit(resource.RLIMIT_AS, (192*1024*1024, 192*1024*1024))
     resource.setrlimit(resource.RLIMIT_CPU, (15, 15))
@@ -45,6 +51,8 @@ def validate(path):
         raise ValueError('Scene drawing too slow: %.1f ms' % (mean*1000))
     if len(pictures) < 3:
         raise ValueError('Scene does not animate')
+    if not temporal_response(function):
+        raise ValueError('Scene does not move with constant audio. Use time in visible positions or drawing angles.')
     response = audio_response(function)
     if response < .005:
         raise ValueError('Audio response too subtle at level 0.2. Make size and brightness change much more.')
