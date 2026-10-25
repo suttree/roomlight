@@ -17,6 +17,11 @@ GOOD = '''def draw_frame(draw, t, audio, width, height):
 
 
 class SceneTests(unittest.TestCase):
+    def setUp(self):
+        planned = patch('generate_daily.scheduled_scene', return_value=None)
+        planned.start()
+        self.addCleanup(planned.stop)
+
     def test_cli_end_marker_is_not_python(self):
         self.assertEqual(generate_daily.extract_code(GOOD+' [end of text]\n'), GOOD)
         self.assertEqual(generate_daily.extract_code('```python\n'+GOOD+'``` [end of text]\n'), GOOD)

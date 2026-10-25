@@ -21,6 +21,11 @@ METHOD = PREFIX+'''        x = 180 + 120 * math.sin(t * 0.3 + i * 0.7)
 
 
 class MethodTests(unittest.TestCase):
+    def setUp(self):
+        planned = patch('generate_daily.scheduled_scene', return_value=None)
+        planned.start()
+        self.addCleanup(planned.stop)
+
     def test_new_layout_has_audio_response_animation_and_quiet_blanking(self):
         self.assertTrue(matches_method(METHOD))
         scene = compile_scene(METHOD)

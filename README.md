@@ -180,3 +180,11 @@ with `source: manual` and `animation_mode: audio_driven` uses the validator's
 `--audio-driven` option, retaining syntax, performance and audio-response checks
 without requiring motion under constant audio. Nightly model scenes still
 require time-driven motion.
+
+From 26–29 October 2026, the nightly job selects four tested classic scenes:
+full-height rainbow bars, a mirrored equaliser, horizontal spectrum bars and a
+split equaliser. These are curated scenes (`source: classic_series`), not LLM
+outputs. Each uses all 24 frequency bands and a separate volume meter. A square
+root response makes quieter bands more visible; quiet blanking is unchanged.
+The existing procedural generator resumes on 30 October. Today's scene is not
+replaced when this schedule is installed.

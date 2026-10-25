@@ -11,6 +11,7 @@ import sys
 import time
 from pathlib import Path
 
+from classic_series import scheduled_scene
 from scenes import check_source
 from classic_scenes import classic_scene, NAMES as CLASSIC_NAMES
 from constrained_scene import THEMES, matches_spec
@@ -101,7 +102,7 @@ def activate_scene(code, date, theme, status):
     candidate.write_text(code)
     candidate.chmod(0o644)
     validation_command = ['/usr/bin/python3', str(BASE/'validate_scene.py'), str(candidate)]
-    if status.get('source') == 'manual' and status.get('animation_mode') == 'audio_driven':
+    if status.get('source') in ('manual', 'classic_series') and status.get('animation_mode') == 'audio_driven':
         validation_command.append('--audio-driven')
     checked = subprocess.run(sandbox(validation_command, 'vis-validate'),
                              capture_output=True, text=True, timeout=35)
@@ -191,6 +192,14 @@ def run(force=False, retry_saved=False):
             return
         if not force and datetime.datetime.now().hour >= 6:
             print('Outside generation window; waiting until tonight')
+            return
+        planned = scheduled_scene(datetime.date.today())
+        if planned:
+            theme, code = planned
+            series_status = {'date': date, 'source': 'classic_series',
+                             'animation_mode': 'audio_driven', 'success': False,
+                             'previous_theme': status.get('theme'), 'attempts': 0}
+            activate_scene(code, date, theme, series_status)
             return
         previous_theme = status.get('theme') if status.get('success') else status.get('previous_theme')
         status = {'date': date, 'success': False, 'attempts': 0,
