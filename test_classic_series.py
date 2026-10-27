@@ -12,8 +12,9 @@ from validate_scene import audio_response, temporal_response
 
 class SeriesTests(unittest.TestCase):
     def test_dates_and_every_scene(self):
-        self.assertIsNone(scheduled_scene(START-datetime.timedelta(days=1)))
-        self.assertIsNone(scheduled_scene(START+datetime.timedelta(days=4)))
+        self.assertEqual(scheduled_scene(START), scheduled_scene(START+datetime.timedelta(days=4)))
+        self.assertEqual(scheduled_scene(START+datetime.timedelta(days=3)),
+                         scheduled_scene(START+datetime.timedelta(days=403)))
         names = set()
         for offset in range(4):
             name, code = scheduled_scene(START+datetime.timedelta(days=offset))
@@ -24,7 +25,8 @@ class SeriesTests(unittest.TestCase):
             audio = dict(level=.5, bands=(.3,)*24, quiet=True)
             self.assertIsNone(draw_scene(scene, 0, audio).getbbox())
             audio['quiet'] = False
-            draw_scene(scene, 0, audio)
+            frame = draw_scene(scene, 0, audio)
+            self.assertEqual(set(frame.crop((0,325,360,360)).getdata()), {(8,14,25)})
         self.assertEqual(len(names), 4)
 
     def test_nightly_series_skips_model_and_records_honest_source(self):

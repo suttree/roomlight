@@ -2,7 +2,7 @@
 
 A microphone-driven display for the Pi 3 and legacy HyperPixel square screen.
 Project repository: [suttree/roomlight](https://github.com/suttree/roomlight).
-Frequency bars and a circle react to sound. After three seconds below the
+Colourful classic frequency bars and equalisers react to sound. After three seconds below the
 noise threshold, the display goes black. It resumes as soon as sound returns. This is an amplitude
 and frequency visualiser, not a music beat tracker. No audio is saved or sent.
 
@@ -181,10 +181,11 @@ with `source: manual` and `animation_mode: audio_driven` uses the validator's
 without requiring motion under constant audio. Nightly model scenes still
 require time-driven motion.
 
-From 26–29 October 2026, the nightly job selects four tested classic scenes:
+The nightly job permanently rotates through four tested classic scenes:
 full-height rainbow bars, a mirrored equaliser, horizontal spectrum bars and a
 split equaliser. These are curated scenes (`source: classic_series`), not LLM
-outputs. Each uses all 24 frequency bands and a separate volume meter. A square
-root response makes quieter bands more visible; quiet blanking is unchanged.
-The existing procedural generator resumes on 30 October. Today's scene is not
-replaced when this schedule is installed.
+outputs. Each uses all 24 frequency bands. There is no separate volume meter or
+bottom divider. A square-root response makes quieter bands more visible;
+quiet blanking is unchanged. The rotation repeats every four days and does not
+return to procedural model generation. The older model code and examples remain
+available for reference.

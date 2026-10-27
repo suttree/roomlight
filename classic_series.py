@@ -1,4 +1,4 @@
-"""A short, explicitly scheduled run of audio-driven classic visualisers."""
+"""A permanent daily rotation of audio-driven classic visualisers."""
 import datetime
 
 START = datetime.date(2026, 10, 26)
@@ -7,9 +7,7 @@ NAMES = ('full-height rainbow spectrum', 'mirrored rainbow equaliser',
 
 
 def scheduled_scene(day):
-    index = (day - START).days
-    if not 0 <= index < len(NAMES):
-        return None
+    index = (day - START).days % len(NAMES)
     header = '''def draw_frame(draw, t, audio, width, height):
     level = min(1, max(0, audio['level']))
     for i in range(24):
@@ -42,10 +40,4 @@ def scheduled_scene(day):
             draw.rectangle((x,170,x+11,170+h), fill=colour)
             draw.line((x,154-h,x+11,154-h), fill=(235,245,255), width=2)
 ''')
-    meter = '''    draw.line((6,328,351,328), fill=(35,45,65), width=1)
-    for i in range(24):
-        colour = (40,220,160) if i < 16 else (255,180,40) if i < 21 else (255,65,100)
-        if i/24 < level:
-            draw.rectangle((6+i*14.5,338,17+i*14.5,351), fill=colour)
-'''
-    return NAMES[index], header + bodies[index] + meter
+    return NAMES[index], header + bodies[index]
