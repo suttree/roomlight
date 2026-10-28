@@ -1,10 +1,13 @@
 [Unit]
-Description=Generate and validate a daily scene using the local coding model
+Description=Select and validate the daily built-in classic visualiser
 After=time-sync.target
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/python3 /opt/room-visualiser/generate_daily.py
-TimeoutStartSec=95min
+TimeoutStartSec=1min
 Nice=10
 Environment=TZ=Europe/London
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+NoNewPrivileges=yes

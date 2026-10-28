@@ -1,5 +1,5 @@
 [Unit]
-Description=Generate the day's visualisation locally at 00:10
+Description=Select the day's built-in classic visualiser at 00:10
 
 [Timer]
 OnCalendar=*-*-* 00:10:00 Europe/London

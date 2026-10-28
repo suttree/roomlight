@@ -1,12 +1,7 @@
 import datetime
 import json
-import subprocess
-import tempfile
 import unittest
-from pathlib import Path
-from unittest.mock import patch
 
-import generate_daily
 from method_generation import PREFIX, grammar_for_method, layout_signature, matches_method, motion_policy, PALETTES, PAINTS
 from scenes import compile_scene, draw_scene
 from validate_scene import audio_response, temporal_response
@@ -21,11 +16,6 @@ METHOD = PREFIX+'''        x = 180 + 120 * math.sin(t * 0.3 + i * 0.7)
 
 
 class MethodTests(unittest.TestCase):
-    def setUp(self):
-        planned = patch('generate_daily.scheduled_scene', return_value=None)
-        planned.start()
-        self.addCleanup(planned.stop)
-
     def test_new_layout_has_audio_response_animation_and_quiet_blanking(self):
         self.assertTrue(matches_method(METHOD))
         scene = compile_scene(METHOD)
@@ -106,25 +96,6 @@ class MethodTests(unittest.TestCase):
         changed = METHOD.replace('math.sin(t * 0.3 + i * 0.7)', 'math.cos(t * 0.3 - i * 0.7)')
         self.assertEqual(layout_signature(METHOD), layout_signature(retuned))
         self.assertNotEqual(layout_signature(METHOD), layout_signature(changed))
-        with tempfile.TemporaryDirectory() as directory, patch.object(generate_daily, 'DATA', Path(directory)):
-            (Path(directory)/'current.py').write_text(METHOD)
-            with self.assertRaisesRegex(ValueError, 'repeats the previous layout'):
-                generate_daily.activate_scene(retuned, '2026-10-18', 'test', {
-                    'source': 'local_model', 'generation_format': 'procedural_python_v2'})
-
-    def test_model_command_uses_procedural_grammar(self):
-        grammar = grammar_for_method()
-        self.assertIn('expression ::=', grammar)
-        self.assertIn('paint ::=', grammar)
-        self.assertIn('draw.polygon', grammar)
-        self.assertNotIn('@', grammar)
-        with tempfile.TemporaryDirectory() as directory, patch.object(generate_daily, 'DATA', Path(directory)):
-            with patch('generate_daily.run_model', return_value=subprocess.CompletedProcess([], 0, METHOD, '')) as model, patch('generate_daily.subprocess.run', return_value=subprocess.CompletedProcess([], 0, '{}', '')):
-                generate_daily.run(force=True)
-            status = json.loads((Path(directory)/'generation.json').read_text())
-            self.assertEqual(status['generation_format'], 'procedural_python_v2')
-            self.assertEqual((Path(directory)/'scene.gbnf').read_text(), grammar)
-            self.assertIn('--grammar-file', model.call_args[0][0])
 
 
 if __name__ == '__main__':
