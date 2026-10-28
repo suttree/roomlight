@@ -57,11 +57,12 @@ bottom divider. The rotation repeats every four days. There is no LLM call,
 model runtime, API key or internet connection required. Audio processing and
 scene selection happen on the Pi. Both services have network access disabled.
 
-At midnight London time, the display and microphone stop and the backlight
-turns off. At 00:10, the daily job selects and validates the next classic.
-At 06:00, the display and microphone resume. The Pi stays powered overnight.
-Timers follow Europe/London, including daylight saving. A missed nightly job
-runs when the Pi next starts.
+The display and microphone run 24/7. After three seconds of quiet, the screen
+goes black and resumes when sound returns. The backlight stays on.
+At 00:10 London time, the daily job selects and validates the next classic
+without stopping the display or microphone. The timer follows Europe/London,
+including daylight saving. A missed nightly job runs when the Pi next starts.
+The schedule timer checks every minute that the display service is running.
 
 Before activation, a separate restricted process checks the scene's syntax,
 audio response and rendering speed. A failed check leaves the current scene

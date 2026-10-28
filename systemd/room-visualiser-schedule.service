@@ -1,5 +1,5 @@
 [Unit]
-Description=Apply visualiser day and night schedule
+Description=Keep the visualiser and microphone running
 After=time-sync.target
 
 [Service]

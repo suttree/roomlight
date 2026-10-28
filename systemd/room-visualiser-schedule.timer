@@ -1,5 +1,5 @@
 [Unit]
-Description=Keep visualiser off midnight to 06:00 London time
+Description=Keep the visualiser running around the clock
 
 [Timer]
 OnBootSec=30

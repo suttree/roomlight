@@ -1,4 +1,4 @@
-"""Keep the display and microphone off from midnight to 06:00 London time."""
+"""Keep the display and microphone running at every hour."""
 import argparse
 import datetime
 import os
@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def awake(hour):
-    return 6 <= hour < 24
+    return True
 
 
 def reconcile(force=None):

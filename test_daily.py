@@ -48,11 +48,10 @@ class SceneTests(unittest.TestCase):
         self.assertEqual(image.getpixel((10, 20)), (180, 220, 240))
         self.assertEqual(image.getpixel((50, 50)), (200, 100, 50))
 
-    def test_quiet_hours(self):
-        self.assertFalse(awake(0))
-        self.assertFalse(awake(5))
-        self.assertTrue(awake(6))
-        self.assertTrue(awake(23))
+    def test_runs_at_every_hour(self):
+        for hour in range(24):
+            with self.subTest(hour=hour):
+                self.assertTrue(awake(hour))
 
     def test_line_endpoints_accept_explicit_colour(self):
         code = '''def draw_frame(draw, t, audio, width, height):
