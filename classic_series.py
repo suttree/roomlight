@@ -10,6 +10,7 @@ def scheduled_scene(day):
     index = (day - START).days % len(NAMES)
     header = '''def draw_frame(draw, t, audio, width, height):
     level = min(1, max(0, audio['level']))
+    centre = height / 2
     for i in range(24):
         band = min(1, max(0, audio['bands'][i]))
         energy = min(1, math.sqrt(band) * (.8 + .2 * level))
@@ -19,25 +20,25 @@ def scheduled_scene(day):
     bodies = (
 '''        h = 308 * energy
         if h > 1:
-            draw.rectangle((x,320-h,x+11,320), fill=colour)
-            draw.line((x,316-h,x+11,316-h), fill=(235,245,255), width=2)
+            draw.rectangle((x,centre+156-h,x+11,centre+156), fill=colour)
+            draw.line((x,centre+152-h,x+11,centre+152-h), fill=(235,245,255), width=2)
 ''',
 '''        h = 146 * energy
         if h > 1:
-            draw.rectangle((x,164-h,x+11,164+h), fill=colour)
-            draw.line((x,160-h,x+11,160-h), fill=(235,245,255), width=2)
-            draw.line((x,168+h,x+11,168+h), fill=(235,245,255), width=2)
+            draw.rectangle((x,centre-h,x+11,centre+h), fill=colour)
+            draw.line((x,centre-4-h,x+11,centre-4-h), fill=(235,245,255), width=2)
+            draw.line((x,centre+4+h,x+11,centre+4+h), fill=(235,245,255), width=2)
 ''',
 '''        h = 340 * energy
-        y = 8 + i * 13
+        y = (height - 310) / 2 + i * 13
         if h > 1:
             draw.rectangle((8,y,8+h,y+10), fill=colour)
             draw.line((12+h,y,12+h,y+10), fill=(235,245,255), width=2)
 ''',
 '''        h = 146 * energy
         if h > 1:
-            draw.rectangle((x,158-h,x+11,158), fill=colour)
-            draw.rectangle((x,170,x+11,170+h), fill=colour)
-            draw.line((x,154-h,x+11,154-h), fill=(235,245,255), width=2)
+            draw.rectangle((x,centre-6-h,x+11,centre-6), fill=colour)
+            draw.rectangle((x,centre+6,x+11,centre+6+h), fill=colour)
+            draw.line((x,centre-10-h,x+11,centre-10-h), fill=(235,245,255), width=2)
 ''')
     return NAMES[index], header + bodies[index]

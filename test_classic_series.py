@@ -26,7 +26,7 @@ class SeriesTests(unittest.TestCase):
             self.assertIsNone(draw_scene(scene, 0, audio).getbbox())
             audio['quiet'] = False
             frame = draw_scene(scene, 0, audio)
-            self.assertEqual(set(frame.crop((0,325,360,360)).getdata()), {(8,14,25)})
+            self.assertEqual(set(frame.crop((0,345,360,360)).getdata()), {(8,14,25)})
         self.assertEqual(len(names), 4)
 
     def test_nightly_series_skips_model_and_records_honest_source(self):
